@@ -1,0 +1,10 @@
+{
+  "name": "Hauspilot - Immo Dashboard",
+  "short_name": "Hauspilot",
+  "description": "Mein persönliches Vermieter Dashboard",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f7fa",
+  "theme_color": "#1e3a8a",
+  "orientation": "portrait-primary"
+}
