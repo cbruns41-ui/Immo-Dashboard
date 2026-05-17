@@ -10,6 +10,9 @@ export default function Houses() {
   const [editHouseId, setEditHouseId] = useState(null);
   const [openCostsHouse, setOpenCostsHouse] = useState({});
 
+  // NEU: Apartment Edit State
+  const [editApartment, setEditApartment] = useState(null);
+
   const [newApartment, setNewApartment] = useState({
     name: "",
     tenant: "",
@@ -59,6 +62,17 @@ export default function Houses() {
     const newHouses = houses.filter((h) => h.id !== id);
 
     await setHouses(newHouses);
+  };
+
+  // NEU: Haus bearbeiten starten
+  const startEditHouse = (house) => {
+    setHouseName(house.name);
+    setEditHouseId(house.id);
+  };
+
+  const cancelEditHouse = () => {
+    setHouseName("");
+    setEditHouseId(null);
   };
 
   const toggleCosts = (id) => {
@@ -120,23 +134,16 @@ export default function Houses() {
 
     const apt = {
       id: uuidv4(),
-
       name: newApartment.name,
-
       tenant: newApartment.tenant,
       tenant2: newApartment.tenant2 || "",
-
       persons: Number(newApartment.persons) || 1,
-
       kaltmiete: Number(newApartment.kaltmiete),
-
       warmmiete: Number(
         newApartment.warmmiete ||
           Number(newApartment.kaltmiete) * 1.2
       ),
-
       deposit: Number(newApartment.deposit) || 0,
-
       notes: newApartment.notes || "",
     };
 
@@ -178,6 +185,33 @@ export default function Houses() {
     await setHouses(newHouses);
   };
 
+  // NEU: Apartment speichern
+  const saveApartmentEdit = async () => {
+    const { houseId, apt } = editApartment;
+
+    const newHouses = houses.map((h) => {
+      if (h.id !== houseId) return h;
+
+      return {
+        ...h,
+        apartments: h.apartments.map((a) =>
+          a.id === apt.id
+            ? {
+                ...apt,
+                persons: Number(apt.persons) || 1,
+                kaltmiete: Number(apt.kaltmiete) || 0,
+                warmmiete: Number(apt.warmmiete) || 0,
+                deposit: Number(apt.deposit) || 0,
+              }
+            : a
+        ),
+      };
+    });
+
+    await setHouses(newHouses);
+    setEditApartment(null);
+  };
+
   return (
     <div>
       <h2>🏠 Häuser & Wohnungen</h2>
@@ -202,6 +236,19 @@ export default function Houses() {
         >
           + Haus hinzufügen
         </button>
+
+        {editHouseId && (
+          <button
+            onClick={cancelEditHouse}
+            style={{
+              padding: "12px 20px",
+              marginLeft: 10,
+              color: "red",
+            }}
+          >
+            Abbrechen
+          </button>
+        )}
       </div>
 
       {houses.map((house) => (
@@ -223,21 +270,27 @@ export default function Houses() {
           >
             <h3>{house.name}</h3>
 
-            <button
-              onClick={() => deleteHouse(house.id)}
-              style={{
-                color: "red",
-              }}
-            >
-              Haus löschen
-            </button>
+            <div>
+              {/* NEU: Edit Button */}
+              <button
+                onClick={() => startEditHouse(house)}
+                style={{ marginRight: 10 }}
+              >
+                Bearbeiten
+              </button>
+
+              <button
+                onClick={() => deleteHouse(house.id)}
+                style={{ color: "red" }}
+              >
+                Haus löschen
+              </button>
+            </div>
           </div>
 
           <button
             onClick={() => toggleCosts(house.id)}
-            style={{
-              margin: "15px 0",
-            }}
+            style={{ margin: "15px 0" }}
           >
             Nebenkosten bearbeiten{" "}
             {openCostsHouse[house.id] ? "▲" : "▼"}
@@ -253,37 +306,18 @@ export default function Houses() {
               }}
             >
               {Object.keys(house.costs || defaultCosts).map((key) => (
-                <div
-                  key={key}
-                  style={{
-                    marginBottom: 15,
-                  }}
-                >
+                <div key={key} style={{ marginBottom: 15 }}>
                   <strong>{key}</strong>
 
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 12,
-                      marginTop: 8,
-                    }}
-                  >
+                  <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
                     <div>
                       Monat:
                       <input
                         type="number"
                         value={house.costs?.[key]?.month || 0}
                         onChange={(e) =>
-                          updateCosts(
-                            house.id,
-                            key,
-                            "month",
-                            e.target.value
-                          )
+                          updateCosts(house.id, key, "month", e.target.value)
                         }
-                        style={{
-                          width: 100,
-                        }}
                       />
                     </div>
 
@@ -293,16 +327,8 @@ export default function Houses() {
                         type="number"
                         value={house.costs?.[key]?.quarter || 0}
                         onChange={(e) =>
-                          updateCosts(
-                            house.id,
-                            key,
-                            "quarter",
-                            e.target.value
-                          )
+                          updateCosts(house.id, key, "quarter", e.target.value)
                         }
-                        style={{
-                          width: 100,
-                        }}
                       />
                     </div>
 
@@ -312,16 +338,8 @@ export default function Houses() {
                         type="number"
                         value={house.costs?.[key]?.year || 0}
                         onChange={(e) =>
-                          updateCosts(
-                            house.id,
-                            key,
-                            "year",
-                            e.target.value
-                          )
+                          updateCosts(house.id, key, "year", e.target.value)
                         }
-                        style={{
-                          width: 100,
-                        }}
                       />
                     </div>
                   </div>
@@ -343,123 +361,73 @@ export default function Houses() {
             <input
               value={newApartment.name}
               onChange={(e) =>
-                setNewApartment({
-                  ...newApartment,
-                  name: e.target.value,
-                })
+                setNewApartment({ ...newApartment, name: e.target.value })
               }
               placeholder="Wohnungsname"
-              style={{
-                marginRight: 8,
-                padding: 10,
-                width: "48%",
-              }}
+              style={{ marginRight: 8, padding: 10, width: "48%" }}
             />
 
             <input
               value={newApartment.tenant}
               onChange={(e) =>
-                setNewApartment({
-                  ...newApartment,
-                  tenant: e.target.value,
-                })
+                setNewApartment({ ...newApartment, tenant: e.target.value })
               }
               placeholder="Mieter 1"
-              style={{
-                marginRight: 8,
-                padding: 10,
-                width: "48%",
-              }}
+              style={{ marginRight: 8, padding: 10, width: "48%" }}
             />
 
             <input
               value={newApartment.tenant2}
               onChange={(e) =>
-                setNewApartment({
-                  ...newApartment,
-                  tenant2: e.target.value,
-                })
+                setNewApartment({ ...newApartment, tenant2: e.target.value })
               }
               placeholder="Mieter 2"
-              style={{
-                marginRight: 8,
-                padding: 10,
-                width: "48%",
-              }}
+              style={{ marginRight: 8, padding: 10, width: "48%" }}
             />
 
             <input
               type="number"
               value={newApartment.persons}
               onChange={(e) =>
-                setNewApartment({
-                  ...newApartment,
-                  persons: e.target.value,
-                })
+                setNewApartment({ ...newApartment, persons: e.target.value })
               }
               placeholder="Anzahl Personen"
-              style={{
-                width: "32%",
-                marginRight: 8,
-                padding: 10,
-              }}
+              style={{ width: "32%", marginRight: 8, padding: 10 }}
             />
 
             <input
               type="number"
               value={newApartment.kaltmiete}
               onChange={(e) =>
-                setNewApartment({
-                  ...newApartment,
-                  kaltmiete: e.target.value,
-                })
+                setNewApartment({ ...newApartment, kaltmiete: e.target.value })
               }
               placeholder="Kaltmiete"
-              style={{
-                width: "32%",
-                marginRight: 8,
-                padding: 10,
-              }}
+              style={{ width: "32%", marginRight: 8, padding: 10 }}
             />
 
             <input
               type="number"
               value={newApartment.warmmiete}
               onChange={(e) =>
-                setNewApartment({
-                  ...newApartment,
-                  warmmiete: e.target.value,
-                })
+                setNewApartment({ ...newApartment, warmmiete: e.target.value })
               }
               placeholder="Warmmiete"
-              style={{
-                width: "32%",
-                marginRight: 8,
-                padding: 10,
-              }}
+              style={{ width: "32%", marginRight: 8, padding: 10 }}
             />
 
             <input
               type="number"
               value={newApartment.deposit}
               onChange={(e) =>
-                setNewApartment({
-                  ...newApartment,
-                  deposit: e.target.value,
-                })
+                setNewApartment({ ...newApartment, deposit: e.target.value })
               }
               placeholder="Kaution"
-              style={{
-                width: "32%",
-                padding: 10,
-              }}
+              style={{ width: "32%", padding: 10 }}
             />
 
             <button
               onClick={() => addApartment(house.id)}
-              style={{
-                marginTop: 15,
-              }}
+              style={{ marginTop: 15 }}
             >
               + Wohnung hinzufügen
             </button>
@@ -486,12 +454,16 @@ export default function Houses() {
 
                 <button
                   onClick={() =>
-                    deleteApartment(house.id, apt.id)
+                    setEditApartment({ houseId: house.id, apt })
                   }
-                  style={{
-                    marginLeft: 15,
-                    color: "red",
-                  }}
+                  style={{ marginLeft: 15 }}
+                >
+                  Bearbeiten
+                </button>
+
+                <button
+                  onClick={() => deleteApartment(house.id, apt.id)}
+                  style={{ marginLeft: 15, color: "red" }}
                 >
                   Löschen
                 </button>
@@ -499,6 +471,74 @@ export default function Houses() {
             ))}
         </div>
       ))}
+
+      {/* NEU: EDIT MODAL */}
+      {editApartment && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              padding: 20,
+              borderRadius: 10,
+              width: 400,
+            }}
+          >
+            <h3>Wohnung bearbeiten</h3>
+
+            <input
+              value={editApartment.apt.name}
+              onChange={(e) =>
+                setEditApartment({
+                  ...editApartment,
+                  apt: { ...editApartment.apt, name: e.target.value },
+                })
+              }
+            />
+
+            <input
+              value={editApartment.apt.tenant}
+              onChange={(e) =>
+                setEditApartment({
+                  ...editApartment,
+                  apt: { ...editApartment.apt, tenant: e.target.value },
+                })
+              }
+            />
+
+            <input
+              value={editApartment.apt.kaltmiete}
+              onChange={(e) =>
+                setEditApartment({
+                  ...editApartment,
+                  apt: { ...editApartment.apt, kaltmiete: e.target.value },
+                })
+              }
+            />
+
+            <div style={{ marginTop: 10 }}>
+              <button onClick={saveApartmentEdit}>Speichern</button>
+              <button
+                onClick={() => setEditApartment(null)}
+                style={{ marginLeft: 10, color: "red" }}
+              >
+                Abbrechen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
