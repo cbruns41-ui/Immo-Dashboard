@@ -214,24 +214,49 @@ export default function Houses() {
 
   return (
     <div>
-      <h2>🏠 Häuser & Wohnungen</h2>
+      <h2 style={{ marginBottom: "25px", color: "#0A2540", fontSize: "28px" }}>
+        🏠 Häuser & Wohnungen
+      </h2>
 
-      <div style={{ marginBottom: 30 }}>
+      {/* Haus hinzufügen */}
+      <div
+        style={{
+          background: "white",
+          padding: "25px",
+          borderRadius: "16px",
+          boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
+          marginBottom: "35px",
+          display: "flex",
+          alignItems: "center",
+          gap: "15px",
+          flexWrap: "wrap",
+        }}
+      >
         <input
           value={houseName}
           onChange={(e) => setHouseName(e.target.value)}
           placeholder="Neuer Hausname"
           style={{
-            padding: 12,
-            width: 350,
-            marginRight: 10,
+            flex: 1,
+            minWidth: "280px",
+            padding: "14px 18px",
+            borderRadius: "12px",
+            border: "1px solid #e2e8f0",
+            fontSize: "16px",
           }}
         />
 
         <button
           onClick={addHouse}
           style={{
-            padding: "12px 20px",
+            padding: "14px 28px",
+            background: "#0A2540",
+            color: "white",
+            border: "none",
+            borderRadius: "12px",
+            fontSize: "16px",
+            fontWeight: "600",
+            cursor: "pointer",
           }}
         >
           + Haus hinzufügen
@@ -241,9 +266,13 @@ export default function Houses() {
           <button
             onClick={cancelEditHouse}
             style={{
-              padding: "12px 20px",
-              marginLeft: 10,
-              color: "red",
+              padding: "14px 28px",
+              background: "#ef4444",
+              color: "white",
+              border: "none",
+              borderRadius: "12px",
+              fontSize: "16px",
+              fontWeight: "600",
             }}
           >
             Abbrechen
@@ -251,95 +280,105 @@ export default function Houses() {
         )}
       </div>
 
+      {/* Häuser-Liste */}
       {houses.map((house) => (
         <div
           key={house.id}
           style={{
             background: "white",
-            padding: 25,
-            marginBottom: 25,
-            borderRadius: 12,
-            boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+            padding: "28px",
+            marginBottom: "30px",
+            borderRadius: "20px",
+            boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-            }}
-          >
-            <h3>{house.name}</h3>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+            <h3 style={{ margin: 0, fontSize: "24px", color: "#0A2540" }}>{house.name}</h3>
 
             <div>
-              {/* NEU: Edit Button */}
               <button
                 onClick={() => startEditHouse(house)}
-                style={{ marginRight: 10 }}
+                style={{
+                  padding: "10px 18px",
+                  marginRight: "10px",
+                  background: "#e2e8f0",
+                  border: "none",
+                  borderRadius: "10px",
+                  fontSize: "15px",
+                }}
               >
                 Bearbeiten
               </button>
-
               <button
                 onClick={() => deleteHouse(house.id)}
-                style={{ color: "red" }}
+                style={{
+                  padding: "10px 18px",
+                  background: "#ef4444",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "10px",
+                  fontSize: "15px",
+                }}
               >
                 Haus löschen
               </button>
             </div>
           </div>
 
+          {/* Nebenkosten */}
           <button
             onClick={() => toggleCosts(house.id)}
-            style={{ margin: "15px 0" }}
+            style={{
+              marginBottom: "20px",
+              padding: "12px 24px",
+              background: "#f1f5f9",
+              border: "none",
+              borderRadius: "12px",
+              fontSize: "16px",
+              fontWeight: "600",
+            }}
           >
-            Nebenkosten bearbeiten{" "}
-            {openCostsHouse[house.id] ? "▲" : "▼"}
+            Nebenkosten bearbeiten {openCostsHouse[house.id] ? "▲" : "▼"}
           </button>
 
           {openCostsHouse[house.id] && (
             <div
               style={{
                 background: "#f8f9fa",
-                padding: 20,
-                borderRadius: 8,
-                marginBottom: 20,
+                padding: "25px",
+                borderRadius: "16px",
+                marginBottom: "30px",
               }}
             >
               {Object.keys(house.costs || defaultCosts).map((key) => (
-                <div key={key} style={{ marginBottom: 15 }}>
-                  <strong>{key}</strong>
-
-                  <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
-                    <div>
-                      Monat:
+                <div key={key} style={{ marginBottom: "20px" }}>
+                  <strong style={{ display: "block", marginBottom: "8px" }}>{key}</strong>
+                  <div style={{ display: "flex", gap: "15px" }}>
+                    <div style={{ flex: 1 }}>
+                      <small>Monat</small>
                       <input
                         type="number"
                         value={house.costs?.[key]?.month || 0}
-                        onChange={(e) =>
-                          updateCosts(house.id, key, "month", e.target.value)
-                        }
+                        onChange={(e) => updateCosts(house.id, key, "month", e.target.value)}
+                        style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #e2e8f0" }}
                       />
                     </div>
-
-                    <div>
-                      Quartal:
+                    <div style={{ flex: 1 }}>
+                      <small>Quartal</small>
                       <input
                         type="number"
                         value={house.costs?.[key]?.quarter || 0}
-                        onChange={(e) =>
-                          updateCosts(house.id, key, "quarter", e.target.value)
-                        }
+                        onChange={(e) => updateCosts(house.id, key, "quarter", e.target.value)}
+                        style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #e2e8f0" }}
                       />
                     </div>
-
-                    <div>
-                      Jahr:
+                    <div style={{ flex: 1 }}>
+                      <small>Jahr</small>
                       <input
                         type="number"
                         value={house.costs?.[key]?.year || 0}
-                        onChange={(e) =>
-                          updateCosts(house.id, key, "year", e.target.value)
-                        }
+                        onChange={(e) => updateCosts(house.id, key, "year", e.target.value)}
+                        style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #e2e8f0" }}
                       />
                     </div>
                   </div>
@@ -348,131 +387,126 @@ export default function Houses() {
             </div>
           )}
 
-          <h4>Wohnungen in diesem Haus</h4>
+          <h4 style={{ marginBottom: "15px", color: "#0A2540" }}>Wohnungen in diesem Haus</h4>
 
+          {/* Wohnung hinzufügen */}
           <div
             style={{
-              padding: 20,
               background: "#f0f7ff",
-              borderRadius: 10,
-              marginBottom: 20,
+              padding: "25px",
+              borderRadius: "16px",
+              marginBottom: "25px",
             }}
           >
-            <input
-              value={newApartment.name}
-              onChange={(e) =>
-                setNewApartment({ ...newApartment, name: e.target.value })
-              }
-              placeholder="Wohnungsname"
-              style={{ marginRight: 8, padding: 10, width: "48%" }}
-            />
-
-            <input
-              value={newApartment.tenant}
-              onChange={(e) =>
-                setNewApartment({ ...newApartment, tenant: e.target.value })
-              }
-              placeholder="Mieter 1"
-              style={{ marginRight: 8, padding: 10, width: "48%" }}
-            />
-
-            <input
-              value={newApartment.tenant2}
-              onChange={(e) =>
-                setNewApartment({ ...newApartment, tenant2: e.target.value })
-              }
-              placeholder="Mieter 2"
-              style={{ marginRight: 8, padding: 10, width: "48%" }}
-            />
-
-            <input
-              type="number"
-              value={newApartment.persons}
-              onChange={(e) =>
-                setNewApartment({ ...newApartment, persons: e.target.value })
-              }
-              placeholder="Anzahl Personen"
-              style={{ width: "32%", marginRight: 8, padding: 10 }}
-            />
-
-            <input
-              type="number"
-              value={newApartment.kaltmiete}
-              onChange={(e) =>
-                setNewApartment({ ...newApartment, kaltmiete: e.target.value })
-              }
-              placeholder="Kaltmiete"
-              style={{ width: "32%", marginRight: 8, padding: 10 }}
-            />
-
-            <input
-              type="number"
-              value={newApartment.warmmiete}
-              onChange={(e) =>
-                setNewApartment({ ...newApartment, warmmiete: e.target.value })
-              }
-              placeholder="Warmmiete"
-              style={{ width: "32%", marginRight: 8, padding: 10 }}
-            />
-
-            <input
-              type="number"
-              value={newApartment.deposit}
-              onChange={(e) =>
-                setNewApartment({ ...newApartment, deposit: e.target.value })
-              }
-              placeholder="Kaution"
-              style={{ width: "32%", padding: 10 }}
-            />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "12px" }}>
+              <input
+                value={newApartment.name}
+                onChange={(e) => setNewApartment({ ...newApartment, name: e.target.value })}
+                placeholder="Wohnungsname"
+                style={{ padding: "14px", borderRadius: "12px", border: "1px solid #e2e8f0" }}
+              />
+              <input
+                value={newApartment.tenant}
+                onChange={(e) => setNewApartment({ ...newApartment, tenant: e.target.value })}
+                placeholder="Mieter 1"
+                style={{ padding: "14px", borderRadius: "12px", border: "1px solid #e2e8f0" }}
+              />
+              <input
+                value={newApartment.tenant2}
+                onChange={(e) => setNewApartment({ ...newApartment, tenant2: e.target.value })}
+                placeholder="Mieter 2"
+                style={{ padding: "14px", borderRadius: "12px", border: "1px solid #e2e8f0" }}
+              />
+              <input
+                type="number"
+                value={newApartment.persons}
+                onChange={(e) => setNewApartment({ ...newApartment, persons: e.target.value })}
+                placeholder="Personen"
+                style={{ padding: "14px", borderRadius: "12px", border: "1px solid #e2e8f0" }}
+              />
+              <input
+                type="number"
+                value={newApartment.kaltmiete}
+                onChange={(e) => setNewApartment({ ...newApartment, kaltmiete: e.target.value })}
+                placeholder="Kaltmiete €"
+                style={{ padding: "14px", borderRadius: "12px", border: "1px solid #e2e8f0" }}
+              />
+              <input
+                type="number"
+                value={newApartment.warmmiete}
+                onChange={(e) => setNewApartment({ ...newApartment, warmmiete: e.target.value })}
+                placeholder="Warmmiete €"
+                style={{ padding: "14px", borderRadius: "12px", border: "1px solid #e2e8f0" }}
+              />
+              <input
+                type="number"
+                value={newApartment.deposit}
+                onChange={(e) => setNewApartment({ ...newApartment, deposit: e.target.value })}
+                placeholder="Kaution €"
+                style={{ padding: "14px", borderRadius: "12px", border: "1px solid #e2e8f0" }}
+              />
+            </div>
 
             <button
               onClick={() => addApartment(house.id)}
-              style={{ marginTop: 15 }}
+              style={{
+                marginTop: "20px",
+                padding: "14px 28px",
+                background: "#0A2540",
+                color: "white",
+                border: "none",
+                borderRadius: "12px",
+                fontSize: "16px",
+              }}
             >
               + Wohnung hinzufügen
             </button>
           </div>
 
+          {/* Wohnungs-Liste */}
           {house.apartments &&
             house.apartments.map((apt) => (
               <div
                 key={apt.id}
                 style={{
-                  padding: 18,
                   background: "#f8fafc",
-                  marginBottom: 12,
-                  borderRadius: 10,
+                  padding: "22px",
+                  marginBottom: "16px",
+                  borderRadius: "16px",
+                  boxShadow: "0 4px 15px rgba(0,0,0,0.06)",
                 }}
               >
-                <strong>{apt.name}</strong> — {apt.tenant}
-                {apt.tenant2 && ` + ${apt.tenant2}`}
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <div>
+                    <strong style={{ fontSize: "18px" }}>{apt.name}</strong><br />
+                    {apt.tenant} {apt.tenant2 && ` + ${apt.tenant2}`}<br />
+                    <small>
+                      Personen: {apt.persons} | Kalt: {apt.kaltmiete} € | 
+                      Warm: {apt.warmmiete} € | Kaution: {apt.deposit} €
+                    </small>
+                  </div>
 
-                <br />
-
-                Personen: {apt.persons} | Kalt: {apt.kaltmiete} € |
-                Warm: {apt.warmmiete} € | Kaution: {apt.deposit} €
-
-                <button
-                  onClick={() =>
-                    setEditApartment({ houseId: house.id, apt })
-                  }
-                  style={{ marginLeft: 15 }}
-                >
-                  Bearbeiten
-                </button>
-
-                <button
-                  onClick={() => deleteApartment(house.id, apt.id)}
-                  style={{ marginLeft: 15, color: "red" }}
-                >
-                  Löschen
-                </button>
+                  <div>
+                    <button
+                      onClick={() => setEditApartment({ houseId: house.id, apt })}
+                      style={{ marginRight: "12px", padding: "8px 16px" }}
+                    >
+                      Bearbeiten
+                    </button>
+                    <button
+                      onClick={() => deleteApartment(house.id, apt.id)}
+                      style={{ color: "#ef4444", padding: "8px 16px" }}
+                    >
+                      Löschen
+                    </button>
+                  </div>
+                </div>
               </div>
             ))}
         </div>
       ))}
 
-      {/* NEU: EDIT MODAL */}
+      {/* Edit Modal für Wohnung */}
       {editApartment && (
         <div
           style={{
@@ -481,21 +515,23 @@ export default function Houses() {
             left: 0,
             width: "100%",
             height: "100%",
-            background: "rgba(0,0,0,0.5)",
+            background: "rgba(0,0,0,0.6)",
             display: "flex",
-            justifyContent: "center",
             alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
           }}
         >
           <div
             style={{
               background: "white",
-              padding: 20,
-              borderRadius: 10,
-              width: 400,
+              padding: "30px",
+              borderRadius: "20px",
+              width: "420px",
+              maxWidth: "90%",
             }}
           >
-            <h3>Wohnung bearbeiten</h3>
+            <h3 style={{ marginTop: 0 }}>Wohnung bearbeiten</h3>
 
             <input
               value={editApartment.apt.name}
@@ -505,6 +541,8 @@ export default function Houses() {
                   apt: { ...editApartment.apt, name: e.target.value },
                 })
               }
+              style={{ width: "100%", padding: "14px", marginBottom: "12px", borderRadius: "12px" }}
+              placeholder="Wohnungsname"
             />
 
             <input
@@ -515,23 +553,46 @@ export default function Houses() {
                   apt: { ...editApartment.apt, tenant: e.target.value },
                 })
               }
+              style={{ width: "100%", padding: "14px", marginBottom: "12px", borderRadius: "12px" }}
+              placeholder="Mieter 1"
             />
 
             <input
-              value={editApartment.apt.kaltmiete}
+              value={editApartment.apt.kaltmiete || ""}
               onChange={(e) =>
                 setEditApartment({
                   ...editApartment,
                   apt: { ...editApartment.apt, kaltmiete: e.target.value },
                 })
               }
+              style={{ width: "100%", padding: "14px", marginBottom: "20px", borderRadius: "12px" }}
+              placeholder="Kaltmiete"
+              type="number"
             />
 
-            <div style={{ marginTop: 10 }}>
-              <button onClick={saveApartmentEdit}>Speichern</button>
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button
+                onClick={saveApartmentEdit}
+                style={{
+                  flex: 1,
+                  padding: "14px",
+                  background: "#0A2540",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "12px",
+                }}
+              >
+                Speichern
+              </button>
               <button
                 onClick={() => setEditApartment(null)}
-                style={{ marginLeft: 10, color: "red" }}
+                style={{
+                  flex: 1,
+                  padding: "14px",
+                  background: "#f1f5f9",
+                  border: "none",
+                  borderRadius: "12px",
+                }}
               >
                 Abbrechen
               </button>

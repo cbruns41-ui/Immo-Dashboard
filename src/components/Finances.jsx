@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useImmo } from "../context/ImmoContext";
-import { v4 as uuidv4 } from "uuid";
 
 export default function Finances() {
   const { houses, transactions, setTransactions } = useImmo();
@@ -11,7 +10,7 @@ export default function Finances() {
   const [houseId, setHouseId] = useState("");
   const [apartmentId, setApartmentId] = useState("");
 
-  const selectedHouse = houses.find(h => h.id === houseId);
+  const selectedHouse = houses.find(h => String(h.id) === String(houseId));
 
   const addTransaction = () => {
     if (!description.trim() || !amount) {
@@ -20,14 +19,11 @@ export default function Finances() {
     }
 
     const newTrans = {
-      id: uuidv4(), // ✅ FIX: kein Date.now()
-
+      id: crypto.randomUUID(),
       date: new Date().toISOString().split("T")[0],
       description: description.trim(),
       amount: Number(amount),
       type,
-
-      // ✅ FIX: Supabase kompatible Struktur
       house_id: houseId || null,
       apartment_id: apartmentId || null,
     };
@@ -58,21 +54,36 @@ export default function Finances() {
 
   return (
     <div>
-      <h2>💰 Finanzen</h2>
+      <h2 style={{ marginBottom: "25px", color: "#0A2540", fontSize: "28px" }}>
+        💰 Finanzen
+      </h2>
 
-      <div style={{
-        background: "white",
-        padding: 30,
-        borderRadius: 12,
-        boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-        marginBottom: 30
-      }}>
-        <h3>Neue Buchung</h3>
+      {/* Neue Buchung Form */}
+      <div
+        style={{
+          background: "white",
+          padding: "32px",
+          borderRadius: "20px",
+          boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
+          marginBottom: "40px",
+        }}
+      >
+        <h3 style={{ marginTop: 0, marginBottom: "24px", color: "#0A2540" }}>
+          Neue Buchung eintragen
+        </h3>
 
         <select
           value={type}
           onChange={e => setType(e.target.value)}
-          style={{ width: "100%", padding: 14, marginBottom: 12, borderRadius: 8 }}
+          style={{
+            width: "100%",
+            padding: "16px",
+            marginBottom: "16px",
+            borderRadius: "14px",
+            border: "1px solid #e2e8f0",
+            fontSize: "16px",
+            background: "#f8fafc"
+          }}
         >
           <option value="income">Einnahme (+)</option>
           <option value="expense">Ausgabe (-)</option>
@@ -84,7 +95,15 @@ export default function Finances() {
             setHouseId(e.target.value);
             setApartmentId("");
           }}
-          style={{ width: "100%", padding: 14, marginBottom: 12, borderRadius: 8 }}
+          style={{
+            width: "100%",
+            padding: "16px",
+            marginBottom: "16px",
+            borderRadius: "14px",
+            border: "1px solid #e2e8f0",
+            fontSize: "16px",
+            background: "#f8fafc"
+          }}
         >
           <option value="">Haus auswählen...</option>
           {houses.map(h => (
@@ -92,15 +111,22 @@ export default function Finances() {
           ))}
         </select>
 
-        {/* ✅ WICHTIG: exakt wie vorher behalten */}
-        {selectedHouse && (
+        {selectedHouse && selectedHouse.apartments && selectedHouse.apartments.length > 0 && (
           <select
             value={apartmentId}
             onChange={e => setApartmentId(e.target.value)}
-            style={{ width: "100%", padding: 14, marginBottom: 20, borderRadius: 8 }}
+            style={{
+              width: "100%",
+              padding: "16px",
+              marginBottom: "24px",
+              borderRadius: "14px",
+              border: "1px solid #e2e8f0",
+              fontSize: "16px",
+              background: "#f8fafc"
+            }}
           >
             <option value="">Wohnung auswählen (optional)...</option>
-            {selectedHouse.apartments?.map(apt => (
+            {selectedHouse.apartments.map(apt => (
               <option key={apt.id} value={apt.id}>
                 {apt.name} – {apt.tenant}
               </option>
@@ -111,12 +137,14 @@ export default function Finances() {
         <input
           value={description}
           onChange={e => setDescription(e.target.value)}
-          placeholder="Beschreibung"
+          placeholder="Beschreibung der Buchung"
           style={{
             width: "100%",
-            padding: 14,
-            marginBottom: 12,
-            borderRadius: 8
+            padding: "16px",
+            marginBottom: "16px",
+            borderRadius: "14px",
+            border: "1px solid #e2e8f0",
+            fontSize: "16px"
           }}
         />
 
@@ -124,113 +152,123 @@ export default function Finances() {
           type="number"
           value={amount}
           onChange={e => setAmount(e.target.value)}
-          placeholder="Betrag €"
+          placeholder="Betrag in €"
           style={{
             width: "100%",
-            padding: 14,
-            marginBottom: 20,
-            borderRadius: 8
+            padding: "16px",
+            marginBottom: "24px",
+            borderRadius: "14px",
+            border: "1px solid #e2e8f0",
+            fontSize: "16px"
           }}
         />
 
         <button
           onClick={addTransaction}
           style={{
-            padding: "14px 30px",
-            background: "#007bff",
+            padding: "16px 32px",
+            background: "#0A2540",
             color: "white",
             border: "none",
-            borderRadius: 8,
+            borderRadius: "14px",
             width: "100%",
-            fontSize: 16
+            fontSize: "17px",
+            fontWeight: "600",
+            cursor: "pointer"
           }}
         >
           Buchung hinzufügen
         </button>
       </div>
 
-      <div style={{ display: "flex", gap: 20, marginBottom: 30, flexWrap: "wrap" }}>
-        <div style={{
-          background: "#d4edda",
-          padding: 25,
-          borderRadius: 12,
-          flex: 1,
-          textAlign: "center"
-        }}>
-          <strong>Einnahmen</strong><br />
-          <span style={{ fontSize: "32px", color: "green" }}>
+      {/* Zusammenfassung */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "20px", marginBottom: "40px" }}>
+        <div style={{ background: "#d4edda", padding: "28px 24px", borderRadius: "18px", textAlign: "center" }}>
+          <div style={{ fontSize: "42px", marginBottom: "8px" }}>📥</div>
+          <strong style={{ fontSize: "18px", color: "#166534" }}>Einnahmen</strong><br />
+          <span style={{ fontSize: "38px", fontWeight: "700", color: "#166534" }}>
             {totalIncome.toFixed(2)} €
           </span>
         </div>
 
-        <div style={{
-          background: "#f8d7da",
-          padding: 25,
-          borderRadius: 12,
-          flex: 1,
-          textAlign: "center"
-        }}>
-          <strong>Ausgaben</strong><br />
-          <span style={{ fontSize: "32px", color: "red" }}>
+        <div style={{ background: "#fee2e2", padding: "28px 24px", borderRadius: "18px", textAlign: "center" }}>
+          <div style={{ fontSize: "42px", marginBottom: "8px" }}>📤</div>
+          <strong style={{ fontSize: "18px", color: "#b91c1c" }}>Ausgaben</strong><br />
+          <span style={{ fontSize: "38px", fontWeight: "700", color: "#b91c1c" }}>
             {totalExpense.toFixed(2)} €
           </span>
         </div>
 
-        <div style={{
-          background: balance >= 0 ? "#d4edda" : "#f8d7da",
-          padding: 25,
-          borderRadius: 12,
-          flex: 1,
-          textAlign: "center"
+        <div style={{ 
+          background: balance >= 0 ? "#d4edda" : "#fee2e2", 
+          padding: "28px 24px", 
+          borderRadius: "18px", 
+          textAlign: "center" 
         }}>
-          <strong>Saldo</strong><br />
-          <span style={{
-            fontSize: "32px",
-            fontWeight: "bold",
-            color: balance >= 0 ? "green" : "red"
+          <div style={{ fontSize: "42px", marginBottom: "8px" }}>📊</div>
+          <strong style={{ fontSize: "18px", color: balance >= 0 ? "#166534" : "#b91c1c" }}>Saldo</strong><br />
+          <span style={{ 
+            fontSize: "38px", 
+            fontWeight: "700", 
+            color: balance >= 0 ? "#166534" : "#b91c1c" 
           }}>
             {balance.toFixed(2)} €
           </span>
         </div>
       </div>
 
-      <h3>Buchungen ({transactions.length})</h3>
+      {/* Buchungen Liste */}
+      <h3 style={{ marginBottom: "20px", color: "#0A2540" }}>
+        Alle Buchungen ({transactions.length})
+      </h3>
 
       {transactions.length === 0 ? (
-        <p style={{ color: "#666" }}>Noch keine Buchungen.</p>
+        <p style={{ color: "#666", textAlign: "center", padding: "40px 0" }}>
+          Noch keine Buchungen vorhanden.
+        </p>
       ) : (
         transactions.map(t => (
           <div
             key={t.id}
             style={{
               background: "white",
-              padding: 18,
-              marginBottom: 12,
-              borderRadius: 10,
-              borderLeft: `6px solid ${t.type === "income" ? "green" : "red"}`
+              padding: "24px",
+              marginBottom: "16px",
+              borderRadius: "18px",
+              boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
+              borderLeft: `6px solid ${t.type === "income" ? "#16a34a" : "#ef4444"}`
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <strong>{t.date}</strong> — {t.description}<br />
-                <small>
-                  {t.house_id && `Haus ID: ${t.house_id}`}{" "}
-                  {t.apartment_id && `– Wohnung ID: ${t.apartment_id}`}
-                </small>
+                <strong>{t.date}</strong><br />
+                <span style={{ color: "#555" }}>{t.description}</span>
+                {t.house_id && <small style={{ display: "block", marginTop: "6px" }}>Haus: {t.house_id}</small>}
+                {t.apartment_id && <small>Wohnung: {t.apartment_id}</small>}
               </div>
 
-              <div style={{
-                fontWeight: "bold",
-                color: t.type === "income" ? "green" : "red"
-              }}>
-                {t.type === "income" ? "+" : "-"}
-                {Number(t.amount).toFixed(2)} €
+              <div style={{ textAlign: "right" }}>
+                <span style={{ 
+                  fontSize: "24px", 
+                  fontWeight: "700", 
+                  color: t.type === "income" ? "#16a34a" : "#ef4444" 
+                }}>
+                  {t.type === "income" ? "+" : "-"}{Number(t.amount).toFixed(2)} €
+                </span>
               </div>
             </div>
 
             <button
               onClick={() => deleteTransaction(t.id)}
-              style={{ marginTop: 8, color: "red" }}
+              style={{
+                marginTop: "16px",
+                padding: "8px 20px",
+                background: "#fee2e2",
+                color: "#ef4444",
+                border: "none",
+                borderRadius: "10px",
+                fontSize: "15px"
+              }}
             >
               Löschen
             </button>
