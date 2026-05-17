@@ -1,11 +1,14 @@
 import { useState } from "react";
+
 import Dashboard from "./components/Dashboard";
 import Houses from "./components/Houses";
 import Appointments from "./components/Appointments";
 import Finances from "./components/Finances";
 import Abrechnung from "./components/Abrechnung";
 import Settings from "./components/Settings";
-import Cashflow from "./components/Cashflow.jsx"; // ✅ FIX: korrekt importiert
+import Cashflow from "./components/Cashflow.jsx";
+
+import InstallButton from "./components/InstallButton.jsx";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState("dashboard");
@@ -58,7 +61,6 @@ export default function App() {
           💰 Finanzen
         </button>
 
-        {/* ✅ NEU: Cashflow Button */}
         <button
           onClick={() => setCurrentPage("cashflow")}
           style={{ margin: "5px", padding: "12px 20px" }}
@@ -86,12 +88,12 @@ export default function App() {
       {currentPage === "houses" && <Houses />}
       {currentPage === "appointments" && <Appointments />}
       {currentPage === "finanzen" && <Finances />}
-
-      {/* ✅ NEU */}
       {currentPage === "cashflow" && <Cashflow />}
-
       {currentPage === "abrechnung" && <Abrechnung />}
       {currentPage === "einstellungen" && <Settings />}
+
+      {/* ✅ INSTALL BUTTON (NEU) */}
+      <InstallButton />
     </div>
   );
 }
