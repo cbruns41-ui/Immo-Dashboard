@@ -1,68 +1,169 @@
-// src/services/dataService.js
-// Diese Datei sorgt dafür, dass wir später ganz einfach auf eine echte Datenbank umsteigen können
+import { supabase } from "../supabase/supabaseClient";
 
-const STORAGE_KEYS = {
-  houses: "houses",
-  appointments: "appointments",
-  transactions: "transactions",
-  vermieter: "vermieter",
-};
-
-// Hilfsfunktionen für localStorage
-const getFromStorage = (key) => {
-  const saved = localStorage.getItem(key);
-  return saved ? JSON.parse(saved) : null;
-};
-
-const saveToStorage = (key, value) => {
-  localStorage.setItem(key, JSON.stringify(value));
-};
-
-// Der eigentliche Service
 export const dataService = {
-  // Häuser
-  getHouses: () => getFromStorage(STORAGE_KEYS.houses) || [],
-  saveHouses: (houses) => saveToStorage(STORAGE_KEYS.houses, houses),
+  // =========================
+  // VERMieter
+  // =========================
+  async getVermieter(userId) {
+    if (!userId) return null;
 
-  // Termine
-  getAppointments: () => getFromStorage(STORAGE_KEYS.appointments) || [],
-  saveAppointments: (appointments) => saveToStorage(STORAGE_KEYS.appointments, appointments),
+    const { data, error } = await supabase
+      .from("vermieter")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle();
 
-  // Buchungen / Finanzen
-  getTransactions: () => getFromStorage(STORAGE_KEYS.transactions) || [],
-  saveTransactions: (transactions) => saveToStorage(STORAGE_KEYS.transactions, transactions),
+    if (error) {
+      console.error("❌ Vermieter laden:", error);
+      return null;
+    }
 
-  // Vermieter Daten
-  getVermieter: () => {
-    const saved = getFromStorage(STORAGE_KEYS.vermieter);
-    return saved || {
-      name: "", 
-      adresse: "", 
-      plz: "", 
-      ort: "", 
-      telefon: "", 
-      email: "",
-      iban: "", 
-      bic: "", 
-      bankname: ""
-    };
+    return data;
   },
-  saveVermieter: (vermieter) => saveToStorage(STORAGE_KEYS.vermieter, vermieter),
 
-  // Alles auf einmal laden
-  loadAllData: () => ({
-    houses: getFromStorage(STORAGE_KEYS.houses) || [],
-    appointments: getFromStorage(STORAGE_KEYS.appointments) || [],
-    transactions: getFromStorage(STORAGE_KEYS.transactions) || [],
-    vermieter: getFromStorage(STORAGE_KEYS.vermieter) || {},
-  }),
+  async saveVermieter(userId, dataVermieter) {
+    if (!userId) return;
 
-  // Backup-Funktion (nützlich später)
-  exportAllData: () => ({
-    houses: getFromStorage(STORAGE_KEYS.houses),
-    appointments: getFromStorage(STORAGE_KEYS.appointments),
-    transactions: getFromStorage(STORAGE_KEYS.transactions),
-    vermieter: getFromStorage(STORAGE_KEYS.vermieter),
-    exportedAt: new Date().toISOString(),
-  })
+    const { error } = await supabase
+      .from("vermieter")
+      .upsert({
+        user_id: userId,
+        ...dataVermieter,
+      }, { onConflict: "user_id" });
+
+    if (error) console.error("❌ Vermieter speichern:", error);
+  },
+
+  // =========================
+  // HOUSES
+  // =========================
+  async getHouses(userId) {
+    if (!userId) return [];
+
+    const { data, error } = await supabase
+      .from("houses")
+      .select("*, apartments(*)")
+      .eq("user_id", userId);
+
+    if (error) {
+      console.error("❌ Houses laden:", error);
+      return [];
+    }
+
+    return data || [];
+  },
+
+  async saveHouses(userId, houses) {
+    if (!userId) return;
+
+    const { error } = await supabase.from("houses").upsert(
+      houses.map(h => ({
+        id: h.id,
+        user_id: userId,
+        name: h.name,
+        costs: h.costs || {},
+      }))
+    );
+
+    if (error) console.error("❌ Houses speichern:", error);
+
+    const apartments = houses.flatMap(h =>
+      (h.apartments || []).map(a => ({
+        id: a.id,
+        user_id: userId,
+        house_id: h.id,
+        name: a.name,
+        tenant: a.tenant,
+        tenant2: a.tenant2,
+        persons: a.persons,
+        kaltmiete: a.kaltmiete,
+        warmmiete: a.warmmiete,
+        deposit: a.deposit,
+        notes: a.notes,
+      }))
+    );
+
+    if (apartments.length > 0) {
+      const { error: err2 } = await supabase
+        .from("apartments")
+        .upsert(apartments);
+
+      if (err2) console.error("❌ Apartments speichern:", err2);
+    }
+  },
+
+  // =========================
+  // APPOINTMENTS
+  // =========================
+  async getAppointments(userId) {
+    if (!userId) return [];
+
+    const { data, error } = await supabase
+      .from("appointments")
+      .select("*")
+      .eq("user_id", userId);
+
+    if (error) {
+      console.error("❌ Termine laden:", error);
+      return [];
+    }
+
+    return data || [];
+  },
+
+  async saveAppointments(userId, items) {
+    if (!userId) return;
+
+    const { error } = await supabase.from("appointments").upsert(
+      items.map(a => ({
+        id: a.id,
+        user_id: userId,
+        house_id: a.house_id || null,
+        apartment_id: a.apartment_id || null,
+        date: a.date,
+        title: a.title || "",
+        description: a.description || "",
+      }))
+    );
+
+    if (error) console.error("❌ Termine speichern:", error);
+  },
+
+  // =========================
+  // TRANSACTIONS
+  // =========================
+  async getTransactions(userId) {
+    if (!userId) return [];
+
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("user_id", userId);
+
+    if (error) {
+      console.error("❌ Finanzen laden:", error);
+      return [];
+    }
+
+    return data || [];
+  },
+
+  async saveTransactions(userId, items) {
+    if (!userId) return;
+
+    const { error } = await supabase.from("transactions").upsert(
+      items.map(t => ({
+        id: t.id,
+        user_id: userId,
+        house_id: t.house_id || null,
+        apartment_id: t.apartment_id || null,
+        date: t.date,
+        amount: t.amount,
+        type: t.type,
+        description: t.description,
+      }))
+    );
+
+    if (error) console.error("❌ Finanzen speichern:", error);
+  },
 };
