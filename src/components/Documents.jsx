@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useImmo } from "../context/ImmoContext";
 import { supabase } from "../supabase/supabaseClient";
+import { createWorker } from "tesseract.js";
 
 export default function Documents() {
   const { houses } = useImmo();
@@ -11,15 +12,16 @@ export default function Documents() {
   const [stream, setStream] = useState(null);
   const [photo, setPhoto] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [ocrText, setOcrText] = useState("");
+  const [analyzing, setAnalyzing] = useState(false);
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
   const selectedHouse = houses.find(h => h.id === selectedHouseId);
-  const selectedApartment = selectedHouse?.apartments?.find(a => a.id === selectedApartmentId);
 
   // =========================
-  // KAMERA START (iOS FIX)
+  // KAMERA START
   // =========================
   const startCamera = async () => {
     try {
@@ -53,7 +55,10 @@ export default function Documents() {
     }
   };
 
-  const takePhoto = () => {
+  // =========================
+  // FOTO MACHEN
+  // =========================
+  const takePhoto = async () => {
     if (!videoRef.current) return;
 
     const canvas = canvasRef.current;
@@ -67,8 +72,55 @@ export default function Documents() {
     setPhoto(dataUrl);
 
     stopCamera();
+
+    // 👉 OCR direkt nach Foto starten
+    await runOCR(dataUrl);
   };
 
+  // =========================
+  // OCR (TEXT ERKENNUNG)
+  // =========================
+  const runOCR = async (image) => {
+    setAnalyzing(true);
+
+    try {
+      const worker = await createWorker("deu+eng");
+
+      const result = await worker.recognize(image);
+
+      const text = result.data.text;
+      setOcrText(text);
+
+      await worker.terminate();
+    } catch (err) {
+      console.error("OCR Fehler:", err);
+    }
+
+    setAnalyzing(false);
+  };
+
+  // =========================
+  // TYPE ERKENNUNG (simpel)
+  // =========================
+  const detectType = (text) => {
+    const t = text.toLowerCase();
+
+    if (t.includes("rechnung") || t.includes("invoice")) return "rechnung";
+    if (t.includes("versicherung")) return "versicherung";
+    if (t.includes("miete")) return "vertrag";
+    if (t.includes("reparatur")) return "reparatur";
+
+    return "sonstiges";
+  };
+
+  const detectTitle = (text) => {
+    const lines = text.split("\n").filter(Boolean);
+    return lines[0]?.slice(0, 60) || "Dokument";
+  };
+
+  // =========================
+  // UPLOAD
+  // =========================
   const uploadPhoto = async () => {
     if (!photo || !selectedHouseId) {
       alert("Bitte Foto machen und ein Haus auswählen!");
@@ -83,17 +135,46 @@ export default function Documents() {
 
       const blob = await (await fetch(photo)).blob();
 
-      const { error } = await supabase.storage
+      // 1. Upload Storage
+      const { error: uploadError } = await supabase.storage
         .from("documents")
         .upload(filePath, blob, { upsert: true });
 
-      if (error) throw error;
+      if (uploadError) throw uploadError;
 
-      alert("✅ Dokument erfolgreich gespeichert!");
+      // 2. Public URL
+      const { data } = supabase.storage
+        .from("documents")
+        .getPublicUrl(filePath);
+
+      const publicUrl = data.publicUrl;
+
+      // 3. Auto-Kategorie + Titel
+      const type = detectType(ocrText);
+      const title = detectTitle(ocrText);
+
+      // 4. DB speichern
+      const { error: dbError } = await supabase
+        .from("documents")
+        .insert({
+          user_id: (await supabase.auth.getUser()).data.user.id,
+          house_id: selectedHouseId,
+          apartment_id: selectedApartmentId || null,
+          file_url: publicUrl,
+          title,
+          type,
+          ocr_text: ocrText,
+          created_at: new Date().toISOString()
+        });
+
+      if (dbError) throw dbError;
+
+      alert("✅ Dokument gespeichert + OCR fertig!");
 
       setPhoto(null);
       setSelectedHouseId("");
       setSelectedApartmentId("");
+      setOcrText("");
 
     } catch (err) {
       console.error(err);
@@ -103,6 +184,9 @@ export default function Documents() {
     }
   };
 
+  // =========================
+  // UI
+  // =========================
   return (
     <div style={{ padding: "20px 15px", maxWidth: "1280px", margin: "0 auto" }}>
 
@@ -136,7 +220,7 @@ export default function Documents() {
             Dokumente scannen
           </h1>
           <p style={{ margin: 0, color: "#666", fontSize: "18px" }}>
-            Rechnungen, Verträge & Quittungen fotografieren
+            OCR + automatische Kategorisierung
           </p>
         </div>
       </div>
@@ -212,6 +296,23 @@ export default function Documents() {
                 objectFit: "contain"
               }}
             />
+
+            {analyzing && <p>🔍 OCR analysiert...</p>}
+
+            {ocrText && (
+              <div style={{
+                marginTop: 15,
+                padding: 15,
+                background: "#f1f5f9",
+                borderRadius: 10,
+                fontSize: 12,
+                textAlign: "left",
+                maxHeight: 150,
+                overflow: "auto"
+              }}>
+                {ocrText}
+              </div>
+            )}
 
             <div style={{ marginTop: "25px", display: "flex", gap: "15px" }}>
               <button
