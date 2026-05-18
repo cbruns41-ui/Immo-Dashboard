@@ -1,7 +1,6 @@
-import { useRef, useState } from "react";
+import { useState, useRef } from "react";
 import { useImmo } from "../context/ImmoContext";
 import { supabase } from "../supabase/supabaseClient";
-import { createWorker } from "tesseract.js";
 
 export default function Documents() {
   const { houses } = useImmo();
@@ -17,89 +16,62 @@ export default function Documents() {
   const canvasRef = useRef(null);
 
   const selectedHouse = houses.find(h => h.id === selectedHouseId);
-
-  const selectedApartment = selectedHouse?.apartments?.find(
-    a => a.id === selectedApartmentId
-  );
+  const selectedApartment = selectedHouse?.apartments?.find(a => a.id === selectedApartmentId);
 
   // =========================
-  // AUTO KATEGORIE
-  // =========================
-  const detectType = (text = "") => {
-    const t = text.toLowerCase();
-
-    if (t.includes("miete") || t.includes("rechnung")) return "rechnung";
-    if (t.includes("strom") || t.includes("gas") || t.includes("wasser")) return "nebenkosten";
-    if (t.includes("versicherung")) return "versicherung";
-    if (t.includes("vertrag")) return "vertrag";
-    if (t.includes("reparatur") || t.includes("handwerker")) return "reparatur";
-
-    return "sonstiges";
-  };
-
-  // =========================
-  // OCR FUNCTION
-  // =========================
-  const runOCR = async (imageDataUrl) => {
-    const worker = await createWorker("deu+eng");
-
-    const {
-      data: { text },
-    } = await worker.recognize(imageDataUrl);
-
-    await worker.terminate();
-
-    return text;
-  };
-
-  // =========================
-  // CAMERA
+  // KAMERA START (iOS FIX)
   // =========================
   const startCamera = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" }
+        video: { facingMode: "environment" },
+        audio: false
       });
 
       setStream(mediaStream);
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+
+          videoRef.current.play().catch((err) => {
+            console.log("Video play error:", err);
+          });
+        }
+      }, 100);
+
     } catch (err) {
-      alert("Kamera konnte nicht gestartet werden");
+      console.error(err);
+      alert("Kamera konnte nicht gestartet werden.");
     }
   };
 
   const stopCamera = () => {
     if (stream) {
-      stream.getTracks().forEach(t => t.stop());
+      stream.getTracks().forEach(track => track.stop());
       setStream(null);
     }
   };
 
   const takePhoto = () => {
-    const canvas = canvasRef.current;
-    const video = videoRef.current;
+    if (!videoRef.current) return;
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    const canvas = canvasRef.current;
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
 
     const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0);
+    ctx.drawImage(videoRef.current, 0, 0);
 
     const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-
     setPhoto(dataUrl);
+
     stopCamera();
   };
 
-  // =========================
-  // UPLOAD PRO (MIT OCR)
-  // =========================
   const uploadPhoto = async () => {
     if (!photo || !selectedHouseId) {
-      alert("Bitte Haus auswählen und Foto aufnehmen!");
+      alert("Bitte Foto machen und ein Haus auswählen!");
       return;
     }
 
@@ -111,39 +83,13 @@ export default function Documents() {
 
       const blob = await (await fetch(photo)).blob();
 
-      // 1. Upload Storage
-      const { error: uploadError } = await supabase.storage
+      const { error } = await supabase.storage
         .from("documents")
         .upload(filePath, blob, { upsert: true });
 
-      if (uploadError) throw uploadError;
-
-      const { data: publicUrlData } = supabase.storage
-        .from("documents")
-        .getPublicUrl(filePath);
-
-      const publicUrl = publicUrlData.publicUrl;
-
-      // 2. OCR TEXT
-      const ocrText = await runOCR(photo);
-
-      // 3. AUTO TYPE
-      const type = detectType(ocrText);
-
-      // 4. SAVE DB
-      const { error } = await supabase.from("documents").insert({
-        user_id: (await supabase.auth.getUser()).data.user.id,
-        house_id: selectedHouseId,
-        apartment_id: selectedApartmentId || null,
-        file_url: publicUrl,
-        type,
-        name: `Dokument ${new Date().toLocaleDateString()}`,
-        ocr_text: ocrText
-      });
-
       if (error) throw error;
 
-      alert("✅ Dokument gespeichert + OCR fertig!");
+      alert("✅ Dokument erfolgreich gespeichert!");
 
       setPhoto(null);
       setSelectedHouseId("");
@@ -151,15 +97,12 @@ export default function Documents() {
 
     } catch (err) {
       console.error(err);
-      alert("Fehler beim Upload");
+      alert("Fehler beim Hochladen.");
     } finally {
       setUploading(false);
     }
   };
 
-  // =========================
-  // UI (dein Stil beibehalten)
-  // =========================
   return (
     <div style={{ padding: "20px 15px", maxWidth: "1280px", margin: "0 auto" }}>
 
@@ -190,93 +133,169 @@ export default function Documents() {
 
         <div>
           <h1 style={{ margin: 0, fontSize: "32px", color: "#0A2540" }}>
-            Smart Dokumente
+            Dokumente scannen
           </h1>
           <p style={{ margin: 0, color: "#666", fontSize: "18px" }}>
-            Upload + OCR + Auto-Kategorisierung
+            Rechnungen, Verträge & Quittungen fotografieren
           </p>
         </div>
       </div>
 
-      {/* CAMERA */}
+      {/* MAIN */}
       <div style={{
         background: "white",
         padding: "35px",
         borderRadius: "20px",
-        boxShadow: "0 8px 30px rgba(0,0,0,0.08)"
+        boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
+        marginBottom: "30px"
       }}>
 
         {!stream && !photo && (
-          <button onClick={startCamera} style={{
-            width: "100%",
-            padding: "18px",
-            background: "#0A2540",
-            color: "white",
-            border: "none",
-            borderRadius: "16px"
-          }}>
-            Kamera öffnen
+          <button
+            onClick={startCamera}
+            style={{
+              width: "100%",
+              padding: "18px",
+              background: "#0A2540",
+              color: "white",
+              border: "none",
+              borderRadius: "16px",
+              fontSize: "18px",
+              fontWeight: "600"
+            }}
+          >
+            📸 Kamera öffnen
           </button>
         )}
 
         {stream && (
-          <>
+          <div style={{ textAlign: "center" }}>
             <video
               ref={videoRef}
               autoPlay
               playsInline
-              style={{ width: "100%", borderRadius: "16px" }}
+              muted
+              style={{
+                width: "100%",
+                maxHeight: "420px",
+                borderRadius: "16px",
+                background: "#000"
+              }}
             />
 
-            <button onClick={takePhoto} style={{
-              marginTop: "20px",
-              width: "100%",
-              padding: "16px",
-              background: "#00D4C8",
-              border: "none",
-              borderRadius: "12px"
-            }}>
+            <button
+              onClick={takePhoto}
+              style={{
+                marginTop: "20px",
+                padding: "16px 40px",
+                background: "#00D4C8",
+                color: "white",
+                border: "none",
+                borderRadius: "12px",
+                fontSize: "17px"
+              }}
+            >
               Foto aufnehmen
             </button>
-          </>
+          </div>
         )}
 
         {photo && (
-          <>
-            <img src={photo} style={{ width: "100%", borderRadius: "16px" }} />
-
-            {/* SELECT */}
-            <select
-              value={selectedHouseId}
-              onChange={(e) => setSelectedHouseId(e.target.value)}
-              style={{ width: "100%", marginTop: 20 }}
-            >
-              <option value="">Haus wählen</option>
-              {houses.map(h => (
-                <option key={h.id} value={h.id}>{h.name}</option>
-              ))}
-            </select>
-
-            <button
-              onClick={uploadPhoto}
-              disabled={uploading}
+          <div style={{ textAlign: "center" }}>
+            <img
+              src={photo}
+              alt="Dokument"
               style={{
                 width: "100%",
-                marginTop: 20,
+                maxHeight: "420px",
+                borderRadius: "16px",
+                objectFit: "contain"
+              }}
+            />
+
+            <div style={{ marginTop: "25px", display: "flex", gap: "15px" }}>
+              <button
+                onClick={() => setPhoto(null)}
+                style={{
+                  flex: 1,
+                  padding: "16px",
+                  background: "#f1f5f9",
+                  border: "none",
+                  borderRadius: "12px"
+                }}
+              >
+                Neu machen
+              </button>
+
+              <button
+                onClick={uploadPhoto}
+                disabled={uploading}
+                style={{
+                  flex: 1,
+                  padding: "16px",
+                  background: "#0A2540",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "12px"
+                }}
+              >
+                {uploading ? "Wird hochgeladen..." : "Speichern"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* STORAGE TARGET */}
+      {photo && (
+        <div style={{
+          background: "white",
+          padding: "35px",
+          borderRadius: "20px",
+          boxShadow: "0 8px 30px rgba(0,0,0,0.08)"
+        }}>
+          <h3>Speicherort auswählen</h3>
+
+          <select
+            value={selectedHouseId}
+            onChange={e => setSelectedHouseId(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "16px",
+              marginBottom: "20px",
+              borderRadius: "12px",
+              border: "1px solid #e0e0e0"
+            }}
+          >
+            <option value="">Haus auswählen...</option>
+            {houses.map(h => (
+              <option key={h.id} value={h.id}>{h.name}</option>
+            ))}
+          </select>
+
+          {selectedHouse && (
+            <select
+              value={selectedApartmentId}
+              onChange={e => setSelectedApartmentId(e.target.value)}
+              style={{
+                width: "100%",
                 padding: "16px",
-                background: "#0A2540",
-                color: "white",
                 borderRadius: "12px",
-                border: "none"
+                border: "1px solid #e0e0e0"
               }}
             >
-              {uploading ? "Verarbeite OCR..." : "Speichern + OCR"}
-            </button>
-          </>
-        )}
+              <option value="">Wohnung (optional)</option>
+              {selectedHouse.apartments?.map(apt => (
+                <option key={apt.id} value={apt.id}>
+                  {apt.name} – {apt.tenant}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+      )}
 
-        <canvas ref={canvasRef} style={{ display: "none" }} />
-      </div>
+      <canvas ref={canvasRef} style={{ display: "none" }} />
     </div>
   );
 }
