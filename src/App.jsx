@@ -7,7 +7,7 @@ import Finances from "./components/Finances";
 import Abrechnung from "./components/Abrechnung";
 import Settings from "./components/Settings";
 import Cashflow from "./components/Cashflow.jsx";
-
+import Documents from "./components/Documents";     // ← Neu hinzugefügt
 import InstallButton from "./components/InstallButton.jsx";
 
 export default function App() {
@@ -20,6 +20,7 @@ export default function App() {
     { id: "finanzen", label: "Finanzen", icon: "💰" },
     { id: "cashflow", label: "Cashflow", icon: "📈" },
     { id: "abrechnung", label: "Abrechnung", icon: "📋" },
+    { id: "documents", label: "Dokumente", icon: "📸" },     // ← Neu
     { id: "einstellungen", label: "Einstellungen", icon: "⚙️" },
   ];
 
@@ -79,13 +80,14 @@ export default function App() {
         ))}
       </div>
 
-      {/* PAGES – alles bleibt genau gleich */}
+      {/* PAGES */}
       {currentPage === "dashboard" && <Dashboard />}
       {currentPage === "houses" && <Houses />}
       {currentPage === "appointments" && <Appointments />}
       {currentPage === "finanzen" && <Finances />}
       {currentPage === "cashflow" && <Cashflow />}
       {currentPage === "abrechnung" && <Abrechnung />}
+      {currentPage === "documents" && <Documents />}     {/* ← Neu hinzugefügt */}
       {currentPage === "einstellungen" && <Settings />}
 
       {/* Install Button */}
