@@ -10,7 +10,6 @@ export default function Houses() {
   const [editHouseId, setEditHouseId] = useState(null);
   const [openCostsHouse, setOpenCostsHouse] = useState({});
 
-  // NEU: Apartment Edit State
   const [editApartment, setEditApartment] = useState(null);
 
   const [newApartment, setNewApartment] = useState({
@@ -24,6 +23,21 @@ export default function Houses() {
     notes: "",
   });
 
+  // ====================== GESAMTSUMMEN ======================
+  const getTotalMonthlyCosts = (house) => {
+    if (!house?.costs) return 0;
+    return Object.values(house.costs).reduce((sum, item) => {
+      return sum + (Number(item?.month) || 0);
+    }, 0);
+  };
+
+  const getTotalYearlyCosts = (house) => {
+    if (!house?.costs) return 0;
+    return Object.values(house.costs).reduce((sum, item) => {
+      return sum + (Number(item?.year) || 0);
+    }, 0);
+  };
+
   const addHouse = async () => {
     if (!houseName.trim()) return;
 
@@ -31,12 +45,7 @@ export default function Houses() {
 
     if (editHouseId) {
       newHouses = houses.map((h) =>
-        h.id === editHouseId
-          ? {
-              ...h,
-              name: houseName,
-            }
-          : h
+        h.id === editHouseId ? { ...h, name: houseName } : h
       );
     } else {
       newHouses = [
@@ -60,11 +69,9 @@ export default function Houses() {
     if (!window.confirm("Haus und alle Wohnungen wirklich löschen?")) return;
 
     const newHouses = houses.filter((h) => h.id !== id);
-
     await setHouses(newHouses);
   };
 
-  // NEU: Haus bearbeiten starten
   const startEditHouse = (house) => {
     setHouseName(house.name);
     setEditHouseId(house.id);
@@ -114,21 +121,14 @@ export default function Houses() {
         };
       }
 
-      return {
-        ...h,
-        costs,
-      };
+      return { ...h, costs };
     });
 
     await setHouses(newHouses);
   };
 
   const addApartment = async (houseId) => {
-    if (
-      !newApartment.name ||
-      !newApartment.tenant ||
-      !newApartment.kaltmiete
-    ) {
+    if (!newApartment.name || !newApartment.tenant || !newApartment.kaltmiete) {
       return;
     }
 
@@ -140,8 +140,7 @@ export default function Houses() {
       persons: Number(newApartment.persons) || 1,
       kaltmiete: Number(newApartment.kaltmiete),
       warmmiete: Number(
-        newApartment.warmmiete ||
-          Number(newApartment.kaltmiete) * 1.2
+        newApartment.warmmiete || Number(newApartment.kaltmiete) * 1.2
       ),
       deposit: Number(newApartment.deposit) || 0,
       notes: newApartment.notes || "",
@@ -149,11 +148,7 @@ export default function Houses() {
 
     const newHouses = houses.map((h) => {
       if (h.id !== houseId) return h;
-
-      return {
-        ...h,
-        apartments: [...(h.apartments || []), apt],
-      };
+      return { ...h, apartments: [...(h.apartments || []), apt] };
     });
 
     await setHouses(newHouses);
@@ -175,7 +170,6 @@ export default function Houses() {
 
     const newHouses = houses.map((h) => {
       if (h.id !== houseId) return h;
-
       return {
         ...h,
         apartments: h.apartments.filter((a) => a.id !== aptId),
@@ -185,13 +179,11 @@ export default function Houses() {
     await setHouses(newHouses);
   };
 
-  // NEU: Apartment speichern
   const saveApartmentEdit = async () => {
     const { houseId, apt } = editApartment;
 
     const newHouses = houses.map((h) => {
       if (h.id !== houseId) return h;
-
       return {
         ...h,
         apartments: h.apartments.map((a) =>
@@ -280,7 +272,6 @@ export default function Houses() {
         )}
       </div>
 
-      {/* Häuser-Liste */}
       {houses.map((house) => (
         <div
           key={house.id}
@@ -384,6 +375,28 @@ export default function Houses() {
                   </div>
                 </div>
               ))}
+
+              {/* ====================== GESAMTSUMMEN ====================== */}
+              <div
+                style={{
+                  marginTop: "30px",
+                  padding: "20px",
+                  background: "#0A2540",
+                  color: "white",
+                  borderRadius: "12px",
+                  fontSize: "17px",
+                  fontWeight: "700",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+                  <span>Nebenkosten gesamt (Monat)</span>
+                  <span>{getTotalMonthlyCosts(house).toFixed(2)} €</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Nebenkosten gesamt (Jahr)</span>
+                  <span>{getTotalYearlyCosts(house).toFixed(2)} €</span>
+                </div>
+              </div>
             </div>
           )}
 
@@ -463,7 +476,7 @@ export default function Houses() {
             </button>
           </div>
 
-          {/* Wohnungs-Liste */}
+          {/* Wohnungen Liste */}
           {house.apartments &&
             house.apartments.map((apt) => (
               <div

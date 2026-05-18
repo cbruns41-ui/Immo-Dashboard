@@ -14,27 +14,31 @@ export default function Dashboard() {
   );
   const totalAppointments = safeAppointments.length;
 
-  const totalWarmmiete = safeHouses.reduce((sum, house) => {
+  // ====================== KORREKTE BERECHNUNG ======================
+  // Jährliche Warmmiete (Vorauszahlung der Mieter)
+  const totalWarmmieteYearly = safeHouses.reduce((sum, house) => {
     return (
       sum +
       (house.apartments || []).reduce(
-        (aptSum, apt) => aptSum + (apt.warmmiete || 0),
+        (aptSum, apt) => aptSum + (apt.warmmiete || 0) * 12,
         0
       )
     );
   }, 0);
 
-  const totalKaltmiete = safeHouses.reduce((sum, house) => {
+  // Jährliche Kaltmiete (nur zur Info)
+  const totalKaltmieteYearly = safeHouses.reduce((sum, house) => {
     return (
       sum +
       (house.apartments || []).reduce(
-        (aptSum, apt) => aptSum + (apt.kaltmiete || 0),
+        (aptSum, apt) => aptSum + (apt.kaltmiete || 0) * 12,
         0
       )
     );
   }, 0);
 
-  const totalRealCosts = safeHouses.reduce((sum, house) => {
+  // Tatsächliche jährliche Nebenkosten (aus dem Reiter "Nebenkosten")
+  const totalRealCostsYearly = safeHouses.reduce((sum, house) => {
     const costs = house.costs || {};
     return (
       sum +
@@ -42,7 +46,8 @@ export default function Dashboard() {
     );
   }, 0);
 
-  const difference = totalWarmmiete - totalRealCosts;
+  // Überschuss / Verlust (Jahresbasis)
+  const difference = totalWarmmieteYearly - totalRealCostsYearly;
 
   return (
     <div style={{ padding: "20px 15px", maxWidth: "1280px", margin: "0 auto" }}>
@@ -129,7 +134,7 @@ export default function Dashboard() {
           <p style={{ color: "#555", fontSize: "18px", fontWeight: "600" }}>Wohnungen</p>
         </div>
 
-        {/* Warmmiete */}
+        {/* Warmmiete (jährlich) */}
         <div
           style={{
             background: "white",
@@ -142,12 +147,12 @@ export default function Dashboard() {
         >
           <div style={{ fontSize: "52px", marginBottom: "24px", color: "#00D4C8" }}>💰</div>
           <h1 style={{ fontSize: "52px", margin: "0 0 8px", color: "#00D4C8", fontWeight: "700" }}>
-            {totalWarmmiete.toFixed(0)} €
+            {totalWarmmieteYearly.toFixed(0)} €
           </h1>
-          <p style={{ color: "#555", fontSize: "18px", fontWeight: "600" }}>Warmmiete (VZ)</p>
+          <p style={{ color: "#555", fontSize: "18px", fontWeight: "600" }}>Warmmiete (VZ) jährlich</p>
         </div>
 
-        {/* Kaltmiete */}
+        {/* Kaltmiete (jährlich) */}
         <div
           style={{
             background: "white",
@@ -160,9 +165,9 @@ export default function Dashboard() {
         >
           <div style={{ fontSize: "52px", marginBottom: "24px", color: "#1e88e5" }}>🏦</div>
           <h1 style={{ fontSize: "52px", margin: "0 0 8px", color: "#1e88e5", fontWeight: "700" }}>
-            {totalKaltmiete.toFixed(0)} €
+            {totalKaltmieteYearly.toFixed(0)} €
           </h1>
-          <p style={{ color: "#555", fontSize: "18px", fontWeight: "600" }}>Kaltmiete gesamt</p>
+          <p style={{ color: "#555", fontSize: "18px", fontWeight: "600" }}>Kaltmiete gesamt (jährlich)</p>
         </div>
 
         {/* Überschuss / Verlust */}
@@ -189,7 +194,7 @@ export default function Dashboard() {
             {difference.toFixed(0)} €
           </h1>
           <p style={{ color: "#555", fontSize: "18px", fontWeight: "600" }}>
-            Überschuss / Verlust
+            Überschuss / Verlust (Jahr)
           </p>
         </div>
 
