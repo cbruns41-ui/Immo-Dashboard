@@ -62,19 +62,42 @@ export function ImmoProvider({ children }) {
 
     const loadAllData = async () => {
       console.log("🚀 Lade Daten für User:", user.id);
+
       setLoading(true);
 
       try {
         const v = await dataService.getVermieter(user.id);
-        if (v) setVermieter(v);
+
+        if (v) {
+          setVermieter(v);
+        }
 
         const h = await dataService.getHouses(user.id);
-        setHouses(h || []);
+
+        // 🔥 FIX: Alte Datensätze absichern
+        const normalizedHouses = (h || []).map(house => ({
+          ...house,
+
+          // 🔥 DIESE FELDER FEHLTEN OFT NACH RELOAD
+          monthlyLoan: Number(house.monthlyLoan) || 0,
+          interestRate: Number(house.interestRate) || 0,
+
+          apartments: (house.apartments || []).map(a => ({
+            ...a,
+            kaltmiete: Number(a.kaltmiete) || 0,
+            warmmiete: Number(a.warmmiete) || 0,
+            deposit: Number(a.deposit) || 0,
+          }))
+        }));
+
+        setHouses(normalizedHouses);
 
         const a = await dataService.getAppointments(user.id);
+
         setAppointments(a || []);
 
         const t = await dataService.getTransactions(user.id);
+
         setTransactions(t || []);
       } catch (err) {
         console.error("❌ Fehler beim Laden:", err);
@@ -92,7 +115,7 @@ export function ImmoProvider({ children }) {
 
   const normalizeId = (id) => {
     if (!id) return "";
-    return String(id); // 🔥 WICHTIG: alles als STRING behandeln
+    return String(id);
   };
 
   // =========================
@@ -101,19 +124,34 @@ export function ImmoProvider({ children }) {
   const saveHousesToDB = async (newHouses) => {
     const safe = Array.isArray(newHouses) ? newHouses : [];
 
-    // FIX: IDs normalisieren
+    // 🔥 FIX: Komplette Daten erzwingen
     const normalized = safe.map(h => ({
       ...h,
+
       id: normalizeId(h.id),
+
+      // 🔥 HIER LAG DER WICHTIGE FIX
+      monthlyLoan: Number(h.monthlyLoan) || 0,
+      interestRate: Number(h.interestRate) || 0,
+
       apartments: (h.apartments || []).map(a => ({
         ...a,
         id: normalizeId(a.id),
+
+        kaltmiete: Number(a.kaltmiete) || 0,
+        warmmiete: Number(a.warmmiete) || 0,
+        deposit: Number(a.deposit) || 0,
       }))
     }));
 
+    // 🔥 DEBUG
+    console.log("💾 SPEICHERE HÄUSER:", normalized);
+
     setHouses(normalized);
 
-    if (user) await dataService.saveHouses(user.id, normalized);
+    if (user?.id) {
+      await dataService.saveHouses(user.id, normalized);
+    }
   };
 
   const saveAppointmentsToDB = async (newAppointments) => {
@@ -128,7 +166,9 @@ export function ImmoProvider({ children }) {
 
     setAppointments(normalized);
 
-    if (user) await dataService.saveAppointments(user.id, normalized);
+    if (user?.id) {
+      await dataService.saveAppointments(user.id, normalized);
+    }
   };
 
   const saveTransactionsToDB = async (newTransactions) => {
@@ -143,12 +183,21 @@ export function ImmoProvider({ children }) {
 
     setTransactions(normalized);
 
-    if (user) await dataService.saveTransactions(user.id, normalized);
+    if (user?.id) {
+      await dataService.saveTransactions(user.id, normalized);
+    }
   };
 
   const saveVermieterToDB = async (newVermieter) => {
     setVermieter(newVermieter);
-    if (user) await dataService.saveVermieter(user.id, newVermieter);
+
+    // 🔥 FIX: user.id statt komplettes user Objekt
+    if (user?.id) {
+      await dataService.saveVermieter(
+        user.id,
+        newVermieter
+      );
+    }
   };
 
   // =========================

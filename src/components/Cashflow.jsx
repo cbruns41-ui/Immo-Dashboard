@@ -1,209 +1,224 @@
+import { useState } from "react";
 import { useImmo } from "../context/ImmoContext";
 
 export default function Cashflow() {
   const { houses, transactions } = useImmo();
 
-  // Einnahmen
-  const totalIncome = transactions
+  const [showDetails, setShowDetails] = useState(false);
+
+  // =========================
+  // EINNAHMEN
+  // =========================
+  const incomeWarmmiete = houses.reduce((sum, house) => {
+    return sum + (house.apartments || []).reduce((aptSum, apt) =>
+      aptSum + (Number(apt.warmmiete) || 0) * 12, 0);
+  }, 0);
+
+  const incomeKaltmiete = houses.reduce((sum, house) => {
+    return sum + (house.apartments || []).reduce((aptSum, apt) =>
+      aptSum + (Number(apt.kaltmiete) || 0) * 12, 0);
+  }, 0);
+
+  const manualIncome = transactions
     .filter((t) => t.type === "income")
     .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
-  // Ausgaben
-  const totalExpense = transactions
+  // =========================
+  // AUSGABEN
+  // =========================
+  const expenseLoan = houses.reduce((sum, house) => {
+    return sum + (Number(house.monthlyLoan) || 0) * 12;
+  }, 0);
+
+  const totalRealCosts = houses.reduce((sum, house) => {
+    const costs = house.costs || {};
+    return sum + Object.values(costs).reduce((cSum, c) => cSum + (c.year || 0), 0);
+  }, 0);
+
+  const manualExpense = transactions
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
-  const balance = totalIncome - totalExpense;
-
-  // Mieteinnahmen (Warmmiete)
-  const rentIncome = houses.reduce((sum, h) => {
-    return (
-      sum +
-      (h.apartments || []).reduce(
-        (aSum, a) => aSum + (Number(a.warmmiete) || 0),
-        0
-      )
-    );
-  }, 0);
+  // =========================
+  // CASHFLOW
+  // =========================
+  const cashflow =
+    incomeWarmmiete +
+    incomeKaltmiete +
+    manualIncome -
+    expenseLoan -
+    totalRealCosts -
+    manualExpense;
 
   return (
     <div style={{ padding: "20px 15px", maxWidth: "1280px", margin: "0 auto" }}>
-      {/* Header */}
-      <div
-        style={{
-          background: "white",
-          padding: "28px 32px",
-          borderRadius: "20px",
-          boxShadow: "0 8px 30px rgba(0,0,0,0.1)",
-          marginBottom: "32px",
+
+      {/* HEADER */}
+      <div style={{
+        background: "white",
+        padding: "28px 32px",
+        borderRadius: "20px",
+        boxShadow: "0 8px 30px rgba(0,0,0,0.1)",
+        marginBottom: "32px",
+        display: "flex",
+        alignItems: "center",
+        gap: "18px"
+      }}>
+        <div style={{
+          width: "62px",
+          height: "62px",
+          background: "linear-gradient(135deg, #0A2540, #00D4C8)",
+          color: "white",
+          borderRadius: "50%",
           display: "flex",
           alignItems: "center",
-          gap: "18px",
-        }}
-      >
-        <div
-          style={{
-            width: "62px",
-            height: "62px",
-            background: "linear-gradient(135deg, #0A2540, #00D4C8)",
-            color: "white",
-            borderRadius: "50%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "32px",
-            boxShadow: "0 4px 15px rgba(0,212,200,0.3)",
-          }}
-        >
-          📈
-        </div>
+          justifyContent: "center",
+          fontSize: "32px",
+          boxShadow: "0 4px 15px rgba(0,212,200,0.3)"
+        }}>📈</div>
+
         <div>
           <h1 style={{ margin: 0, fontSize: "32px", color: "#0A2540" }}>
             Cashflow
           </h1>
           <p style={{ margin: 0, color: "#666", fontSize: "18px" }}>
-            Einnahmen • Ausgaben • Übersicht
+            Realistische Vermieter-Übersicht
           </p>
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-          gap: "24px",
-          marginBottom: "40px",
-        }}
-      >
-        {/* Einnahmen */}
-        <div
-          style={{
-            background: "white",
-            padding: "32px 24px",
-            borderRadius: "20px",
-            boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
-            textAlign: "center",
-          }}
-        >
-          <div style={{ fontSize: "52px", marginBottom: "20px", color: "#28a745" }}>💰</div>
-          <h1 style={{ fontSize: "48px", margin: "0 0 8px", color: "#28a745", fontWeight: "700" }}>
-            {totalIncome.toFixed(0)} €
+      {/* KPI CARDS */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+        gap: "24px",
+        marginBottom: "40px"
+      }}>
+
+        <div style={{ background: "white", padding: "32px 24px", borderRadius: "20px", boxShadow: "0 8px 30px rgba(0,0,0,0.08)", textAlign: "center" }}>
+          <div style={{ fontSize: "52px", marginBottom: "20px", color: "#00D4C8" }}>💰</div>
+          <h1 style={{ fontSize: "48px", margin: "0 0 8px", color: "#00D4C8", fontWeight: "700" }}>
+            {incomeWarmmiete.toFixed(0)} €
           </h1>
-          <p style={{ color: "#555", fontSize: "18px", fontWeight: "600" }}>Einnahmen</p>
+          <p style={{ color: "#555", fontSize: "18px", fontWeight: "600" }}>Warmmiete (Brutto)</p>
         </div>
 
-        {/* Ausgaben */}
-        <div
-          style={{
-            background: "white",
-            padding: "32px 24px",
-            borderRadius: "20px",
-            boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
-            textAlign: "center",
-          }}
-        >
+        <div style={{ background: "white", padding: "32px 24px", borderRadius: "20px", boxShadow: "0 8px 30px rgba(0,0,0,0.08)", textAlign: "center" }}>
+          <div style={{ fontSize: "52px", marginBottom: "20px", color: "#1e88e5" }}>🏦</div>
+          <h1 style={{ fontSize: "48px", margin: "0 0 8px", color: "#1e88e5", fontWeight: "700" }}>
+            {incomeKaltmiete.toFixed(0)} €
+          </h1>
+          <p style={{ color: "#555", fontSize: "18px", fontWeight: "600" }}>Kaltmiete (verfügbar)</p>
+        </div>
+
+        <div style={{ background: "white", padding: "32px 24px", borderRadius: "20px", boxShadow: "0 8px 30px rgba(0,0,0,0.08)", textAlign: "center" }}>
           <div style={{ fontSize: "52px", marginBottom: "20px", color: "#dc3545" }}>📤</div>
           <h1 style={{ fontSize: "48px", margin: "0 0 8px", color: "#dc3545", fontWeight: "700" }}>
-            {totalExpense.toFixed(0)} €
+            {(expenseLoan + totalRealCosts + manualExpense).toFixed(0)} €
           </h1>
-          <p style={{ color: "#555", fontSize: "18px", fontWeight: "600" }}>Ausgaben</p>
+          <p style={{ color: "#555", fontSize: "18px", fontWeight: "600" }}>Gesamtausgaben</p>
         </div>
 
-        {/* Cashflow */}
-        <div
-          style={{
-            background: "white",
-            padding: "32px 24px",
-            borderRadius: "20px",
-            boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
-            textAlign: "center",
-          }}
-        >
+        <div style={{ background: "white", padding: "32px 24px", borderRadius: "20px", boxShadow: "0 8px 30px rgba(0,0,0,0.08)", textAlign: "center" }}>
           <div style={{ fontSize: "52px", marginBottom: "20px" }}>📊</div>
-          <h1
-            style={{
-              fontSize: "48px",
-              margin: "0 0 8px",
-              color: balance >= 0 ? "#28a745" : "#dc3545",
-              fontWeight: "700",
-            }}
-          >
-            {balance.toFixed(0)} €
+          <h1 style={{
+            fontSize: "48px",
+            margin: "0 0 8px",
+            color: cashflow >= 0 ? "#28a745" : "#dc3545",
+            fontWeight: "700"
+          }}>
+            {cashflow.toFixed(0)} €
           </h1>
-          <p style={{ color: "#555", fontSize: "18px", fontWeight: "600" }}>Cashflow</p>
-        </div>
-
-        {/* Warmmiete Soll */}
-        <div
-          style={{
-            background: "white",
-            padding: "32px 24px",
-            borderRadius: "20px",
-            boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
-            textAlign: "center",
-          }}
-        >
-          <div style={{ fontSize: "52px", marginBottom: "20px", color: "#0A2540" }}>🏠</div>
-          <h1 style={{ fontSize: "48px", margin: "0 0 8px", color: "#0A2540", fontWeight: "700" }}>
-            {rentIncome.toFixed(0)} €
-          </h1>
-          <p style={{ color: "#555", fontSize: "18px", fontWeight: "600" }}>Warmmiete (Soll)</p>
+          <p style={{ color: "#555", fontSize: "18px", fontWeight: "600" }}>Netto Cashflow</p>
         </div>
       </div>
 
-      {/* Letzte Buchungen */}
-      <div
-        style={{
+      {/* Details Button */}
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: "30px" }}>
+        <button
+          onClick={() => setShowDetails(!showDetails)}
+          style={{
+            padding: "14px 32px",
+            background: "#0A2540",
+            color: "white",
+            border: "none",
+            borderRadius: "12px",
+            fontSize: "16px",
+            fontWeight: "600",
+            boxShadow: "0 6px 20px rgba(10, 37, 64, 0.25)"
+          }}
+        >
+          {showDetails ? "Details ausblenden" : "Cashflow Details anzeigen"}
+        </button>
+      </div>
+
+      {/* ====================== NEUE DETAIL-TABELLE ====================== */}
+      {showDetails && (
+        <div style={{
           background: "white",
           padding: "35px",
           borderRadius: "20px",
-          boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
-        }}
-      >
-        <h3 style={{ marginBottom: "24px", color: "#0A2540", fontSize: "24px" }}>
-          Letzte Buchungen
-        </h3>
+          boxShadow: "0 8px 30px rgba(0,0,0,0.08)"
+        }}>
+          <h3 style={{ marginBottom: "25px", color: "#0A2540" }}>Cashflow Aufschlüsselung</h3>
 
-        {transactions.length === 0 ? (
-          <p style={{ color: "#666", textAlign: "center", padding: "40px 0", fontSize: "17px" }}>
-            Noch keine Buchungen vorhanden
-          </p>
-        ) : (
-          transactions
-            .slice(0, 10)
-            .map((t) => (
-              <div
-                key={t.id}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "16px 0",
-                  borderBottom: "1px solid #f1f1f1",
-                }}
-              >
-                <div>
-                  <strong style={{ color: "#333" }}>{t.date}</strong>
-                  <span style={{ marginLeft: "12px", color: "#555" }}>
-                    {t.description}
-                  </span>
-                </div>
+          {/* Einnahmen */}
+          <div style={{ marginBottom: "25px" }}>
+            <div style={{ fontWeight: "700", color: "#28a745", fontSize: "18px", marginBottom: "12px" }}>EINNAHMEN</div>
+            
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #eee" }}>
+              <span>Warmmiete (Brutto)</span>
+              <span style={{ color: "#28a745", fontWeight: "600" }}>{incomeWarmmiete.toFixed(2)} €</span>
+            </div>
+            
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #eee" }}>
+              <span>Kaltmiete (verfügbar)</span>
+              <span style={{ color: "#28a745", fontWeight: "600" }}>{incomeKaltmiete.toFixed(2)} €</span>
+            </div>
+            
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #eee" }}>
+              <span>Manuelle Einnahmen</span>
+              <span style={{ color: "#28a745", fontWeight: "600" }}>{manualIncome.toFixed(2)} €</span>
+            </div>
+          </div>
 
-                <div
-                  style={{
-                    fontWeight: "700",
-                    fontSize: "18px",
-                    color: t.type === "income" ? "#28a745" : "#dc3545",
-                  }}
-                >
-                  {t.type === "income" ? "+" : "-"}
-                  {Number(t.amount).toFixed(2)} €
-                </div>
-              </div>
-            ))
-        )}
-      </div>
+          {/* Ausgaben */}
+          <div style={{ marginBottom: "25px" }}>
+            <div style={{ fontWeight: "700", color: "#dc3545", fontSize: "18px", marginBottom: "12px" }}>AUSGABEN</div>
+            
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #eee" }}>
+              <span>Darlehensraten</span>
+              <span style={{ color: "#dc3545", fontWeight: "600" }}>-{expenseLoan.toFixed(2)} €</span>
+            </div>
+            
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #eee" }}>
+              <span>Nebenkosten</span>
+              <span style={{ color: "#dc3545", fontWeight: "600" }}>-{totalRealCosts.toFixed(2)} €</span>
+            </div>
+            
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #eee" }}>
+              <span>Manuelle Ausgaben</span>
+              <span style={{ color: "#dc3545", fontWeight: "600" }}>-{manualExpense.toFixed(2)} €</span>
+            </div>
+          </div>
+
+          {/* NETTO ERGEBNIS */}
+          <div style={{
+            borderTop: "2px solid #ddd",
+            paddingTop: "20px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            fontSize: "20px",
+            fontWeight: "700"
+          }}>
+            <span>NETTO CASHFLOW</span>
+            <span style={{ color: cashflow >= 0 ? "#28a745" : "#dc3545", fontSize: "26px" }}>
+              {cashflow.toFixed(2)} €
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

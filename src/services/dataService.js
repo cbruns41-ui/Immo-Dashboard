@@ -24,18 +24,68 @@ export const dataService = {
   async saveVermieter(userId, dataVermieter) {
     if (!userId) return;
 
+    // =========================
+    // PRÜFEN OB DATENSATZ EXISTIERT
+    // =========================
+    const { data: existing, error: loadError } =
+      await supabase
+        .from("vermieter")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+    if (loadError) {
+      console.error(
+        "❌ Vermieter laden:",
+        loadError
+      );
+      return;
+    }
+
+    // =========================
+    // UPDATE
+    // =========================
+    if (existing) {
+      const { error } = await supabase
+        .from("vermieter")
+        .update({
+          ...dataVermieter,
+        })
+        .eq("user_id", userId);
+
+      if (error) {
+        console.error(
+          "❌ Vermieter updaten:",
+          error
+        );
+      } else {
+        console.log(
+          "✅ Vermieter aktualisiert"
+        );
+      }
+
+      return;
+    }
+
+    // =========================
+    // INSERT
+    // =========================
     const { error } = await supabase
       .from("vermieter")
-      .upsert(
-        {
-          user_id: userId,
-          ...dataVermieter,
-        },
-        { onConflict: "user_id" }
-      );
+      .insert({
+        user_id: userId,
+        ...dataVermieter,
+      });
 
     if (error) {
-      console.error("❌ Vermieter speichern:", error);
+      console.error(
+        "❌ Vermieter speichern:",
+        error
+      );
+    } else {
+      console.log(
+        "✅ Vermieter gespeichert"
+      );
     }
   },
 
@@ -142,6 +192,15 @@ export const dataService = {
           id: String(h.id),
           user_id: userId,
           name: h.name,
+
+          // 🔥 FIX FEHLTE HIER
+          monthlyLoan:
+            Number(h.monthlyLoan) || 0,
+
+          // 🔥 FIX FEHLTE HIER
+          interestRate:
+            Number(h.interestRate) || 0,
+
           costs: h.costs || {},
         }))
       );

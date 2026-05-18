@@ -12,30 +12,33 @@ export default function Abrechnung() {
   const [periodEnd, setPeriodEnd] = useState("");
   const [sharePercentage, setSharePercentage] = useState(100);
 
-  // =========================
-  // FIX: KEIN Number() mehr
-  // =========================
   const selectedHouse = houses.find((h) => h.id === selectedHouseId);
-
   const selectedApartment = selectedHouse?.apartments?.find(
     (a) => a.id === selectedApartmentId
   );
 
+  // =========================
+  // ABRECHNUNG BERECHNEN (unverändert)
+  // =========================
   const calculatePreciseAbrechnung = () => {
     if (!selectedApartment || !periodStart || !periodEnd) return null;
 
     const start = new Date(periodStart);
     const end = new Date(periodEnd);
     const days = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    const months = days / 30.4375;
+
+    const kaltmiete = Number(selectedApartment.kaltmiete) || 0;
+    const nebenkostenVorauszahlung = Number(selectedApartment.warmmiete) || 0;
 
     const result = {
-      tenant: selectedApartment.tenant,
-      apartment: selectedApartment.name,
+      tenant: selectedApartment.tenant || "Unbekannt",
+      apartment: selectedApartment.name || "Wohnung",
       period: `${periodStart} bis ${periodEnd}`,
       days,
-      kaltmiete: selectedApartment.kaltmiete || 0,
-      warmmiete:
-        selectedApartment.warmmiete || selectedApartment.kaltmiete * 1.2,
+      months,
+      kaltmiete,
+      nebenkostenVorauszahlung,
       share: sharePercentage,
       costs: {},
     };
@@ -43,25 +46,39 @@ export default function Abrechnung() {
     const houseCosts = selectedHouse?.costs || defaultCosts;
 
     Object.keys(houseCosts).forEach((key) => {
-      const yearly = houseCosts[key].year || 0;
+      const yearly = Number(houseCosts[key]?.year) || 0;
       const daily = yearly / 365;
+      const tenantCost = daily * days * (sharePercentage / 100);
+      const paidShare = (yearly / 12) * months * (sharePercentage / 100);
 
       result.costs[key] = {
-        total: Math.round(daily * days * (sharePercentage / 100) * 100) / 100,
+        yearly,
+        actual: Math.round(tenantCost * 100) / 100,
+        paid: Math.round(paidShare * 100) / 100,
+        diff: Math.round((tenantCost - paidShare) * 100) / 100,
       };
     });
 
-    const totalNebenkosten = Object.values(result.costs).reduce(
-      (sum, c) => sum + c.total,
+    const totalActual = Object.values(result.costs).reduce(
+      (sum, c) => sum + c.actual,
+      0
+    );
+    const totalPaidCosts = Object.values(result.costs).reduce(
+      (sum, c) => sum + c.paid,
       0
     );
 
-    result.totalNebenkosten = Math.round(totalNebenkosten * 100) / 100;
-    result.gesamtmiete = Math.round((result.warmmiete + totalNebenkosten) * 100) / 100;
+    result.totalNebenkosten = Math.round(totalActual * 100) / 100;
+    result.totalPaidCosts = Math.round(totalPaidCosts * 100) / 100;
+    result.totalPaid = Math.round(nebenkostenVorauszahlung * months * 100) / 100;
+    result.balance = Math.round((result.totalNebenkosten - result.totalPaid) * 100) / 100;
 
     return result;
   };
 
+  // =========================
+  // PDF GENERIEREN (mit schöner Tabelle)
+  // =========================
   const generatePDF = () => {
     const abrechnung = calculatePreciseAbrechnung();
     if (!abrechnung) {
@@ -74,6 +91,7 @@ export default function Abrechnung() {
 
     // Briefkopf
     doc.setFontSize(10);
+    doc.setTextColor(80, 80, 80);
     doc.text(vermieter.name || "Vermieter", 20, y);
     y += 5;
     doc.text(vermieter.adresse || "", 20, y);
@@ -81,42 +99,85 @@ export default function Abrechnung() {
     doc.text(`${vermieter.plz || ""} ${vermieter.ort || ""}`, 20, y);
     y += 5;
     doc.text(vermieter.email || "", 20, y);
-    y += 15;
+    y += 18;
 
+    // Titel
     doc.setFontSize(18);
+    doc.setTextColor(10, 37, 64);
     doc.text("NEBENKOSTENABRECHNUNG", 105, y, { align: "center" });
-    y += 20;
+    y += 18;
 
-    doc.setFontSize(12);
+    // Mieterdaten
+    doc.setFontSize(11);
+    doc.setTextColor(40, 40, 40);
     doc.text(`Mieter: ${abrechnung.tenant}`, 20, y);
-    y += 8;
+    y += 7;
     doc.text(`Wohnung: ${abrechnung.apartment}`, 20, y);
-    y += 8;
+    y += 7;
     doc.text(`Zeitraum: ${abrechnung.period} (${abrechnung.days} Tage)`, 20, y);
-    y += 15;
-
-    doc.text(`Kaltmiete: ${abrechnung.kaltmiete} €`, 20, y);
-    y += 10;
+    y += 7;
     doc.text(`Mieteranteil: ${abrechnung.share}%`, 20, y);
     y += 15;
 
-    doc.text("Verteilte Nebenkosten:", 20, y);
+    // Tabelle Überschrift
+    doc.setFontSize(12);
+    doc.text("Nebenkosten-Detailvergleich", 20, y);
     y += 10;
 
+    // Tabellen-Header
+    doc.setFontSize(10);
+    doc.text("Kostenart", 25, y);
+    doc.text("Ist-Kosten", 105, y);
+    doc.text("Vorauszahlung", 145, y);
+    doc.text("Differenz", 185, y);
+    y += 8;
+
+    // Trennlinie
+    doc.setDrawColor(200, 200, 200);
+    doc.line(20, y, 190, y);
+    y += 6;
+
+    // Tabelle Inhalt
     Object.keys(abrechnung.costs).forEach((key) => {
-      if (abrechnung.costs[key].total > 0) {
-        doc.text(`• ${key}: ${abrechnung.costs[key].total} €`, 25, y);
-        y += 9;
+      const c = abrechnung.costs[key];
+      if (c.actual > 0 || c.paid > 0) {
+        doc.text(key, 25, y);
+        doc.text(c.actual.toFixed(2) + " €", 105, y);
+        doc.text(c.paid.toFixed(2) + " €", 145, y);
+        doc.text(c.diff.toFixed(2) + " €", 185, y);
+        y += 7;
       }
     });
 
     y += 10;
-    doc.setFontSize(14);
-    doc.text(`Summe Nebenkosten: ${abrechnung.totalNebenkosten} €`, 20, y);
-    y += 12;
-    doc.text(`Gesamtmiete für den Zeitraum: ${abrechnung.gesamtmiete} €`, 20, y);
 
-    doc.save(`Abrechnung_${abrechnung.tenant.replace(/ /g, "_")}.pdf`);
+    // Zusammenfassung
+    doc.setFontSize(11);
+    doc.text(`Gesamte Nebenkosten: ${abrechnung.totalNebenkosten.toFixed(2)} €`, 20, y);
+    y += 8;
+    doc.text(`Davon bereits gezahlt: ${abrechnung.totalPaid.toFixed(2)} €`, 20, y);
+    y += 12;
+
+    // Ergebnis (groß und farbig)
+    doc.setFontSize(14);
+    if (abrechnung.balance > 0) {
+      doc.setTextColor(200, 0, 0);
+      doc.text(`Nachzahlung: ${abrechnung.balance.toFixed(2)} €`, 20, y);
+    } else {
+      doc.setTextColor(0, 140, 80);
+      doc.text(`Guthaben: ${Math.abs(abrechnung.balance).toFixed(2)} €`, 20, y);
+    }
+
+    y += 18;
+
+    // Footer
+    doc.setFontSize(9);
+    doc.setTextColor(120, 120, 120);
+    doc.text("Diese Abrechnung wurde automatisch erstellt.", 20, y);
+    y += 5;
+    doc.text("Bitte prüfen und sorgfältig aufbewahren.", 20, y);
+
+    doc.save(`Nebenkostenabrechnung_${abrechnung.tenant.replace(/ /g, "_")}.pdf`);
   };
 
   return (
@@ -159,7 +220,7 @@ export default function Abrechnung() {
         </div>
       </div>
 
-      {/* Form Card */}
+      {/* Form */}
       <div
         style={{
           background: "white",
@@ -219,9 +280,6 @@ export default function Abrechnung() {
 
         <div style={{ display: "flex", gap: "20px", marginBottom: "28px" }}>
           <div style={{ flex: 1 }}>
-            <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#444" }}>
-              Von
-            </label>
             <input
               type="date"
               value={periodStart}
@@ -235,11 +293,7 @@ export default function Abrechnung() {
               }}
             />
           </div>
-
           <div style={{ flex: 1 }}>
-            <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#444" }}>
-              Bis
-            </label>
             <input
               type="date"
               value={periodEnd}
@@ -256,9 +310,6 @@ export default function Abrechnung() {
         </div>
 
         <div style={{ marginBottom: "32px" }}>
-          <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#444" }}>
-            Mieteranteil (%)
-          </label>
           <input
             type="number"
             value={sharePercentage}
@@ -284,11 +335,9 @@ export default function Abrechnung() {
             borderRadius: "16px",
             fontSize: "18px",
             fontWeight: "600",
-            boxShadow: "0 6px 20px rgba(10, 37, 64, 0.3)",
-            transition: "all 0.3s ease",
           }}
         >
-          📄 PDF Abrechnung erstellen & herunterladen
+          📄 PDF erstellen & herunterladen
         </button>
       </div>
     </div>
