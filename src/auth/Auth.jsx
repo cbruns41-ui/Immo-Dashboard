@@ -56,13 +56,11 @@ export default function Auth({ children }) {
   const logout = async () => {
     const { error } = await supabase.auth.signOut();
 
-    // 🔧 verhindert unnötige 403 Logs
     if (error && error.status !== 403) {
       console.warn("Logout error:", error.message);
     }
   };
 
-  // 🔥 wichtig: kein permanentes "Loading block"
   if (loading) {
     return (
       <div style={{ textAlign: "center", marginTop: "100px" }}>
@@ -73,76 +71,96 @@ export default function Auth({ children }) {
 
   if (!user) {
     return (
+      // ─────────────────────────────────────────────────────────────
+      // NEUER FIX: Vollbild-Container, der immer zentriert bleibt
+      // ─────────────────────────────────────────────────────────────
       <div
         style={{
-          maxWidth: "420px",
-          margin: "120px auto",
-          padding: "40px",
-          background: "white",
-          borderRadius: "12px",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
-          textAlign: "center",
+          minHeight: "100vh",
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#f8fafc",
+          padding: "20px",
+          boxSizing: "border-box",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          overflow: "hidden",
         }}
       >
-        <h1 style={{ marginBottom: 10 }}>🔐 Immo Dashboard</h1>
-        <p style={{ marginBottom: 25 }}>Bitte melde dich an</p>
-
-        <input
-          type="email"
-          placeholder="E-Mail"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+        <div
           style={{
+            maxWidth: "420px",
             width: "100%",
-            padding: "14px",
-            marginBottom: 12,
-            borderRadius: "8px",
-            border: "1px solid #ccc",
-          }}
-        />
-
-        <input
-          type="password"
-          placeholder="Passwort"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "14px",
-            marginBottom: 20,
-            borderRadius: "8px",
-            border: "1px solid #ccc",
-          }}
-        />
-
-        <button
-          onClick={handleAuth}
-          style={{
-            width: "100%",
-            padding: "14px",
-            background: "#007bff",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            fontSize: "16px",
+            padding: "40px",
+            background: "white",
+            borderRadius: "12px",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+            textAlign: "center",
           }}
         >
-          {isLogin ? "Einloggen" : "Registrieren"}
-        </button>
+          <h1 style={{ marginBottom: 10 }}>🔐 Immo Dashboard</h1>
+          <p style={{ marginBottom: 25 }}>Bitte melde dich an</p>
 
-        <button
-          onClick={() => setIsLogin(!isLogin)}
-          style={{
-            marginTop: 15,
-            color: "blue",
-            background: "none",
-            border: "none",
-          }}
-        >
-          {isLogin
-            ? "Noch kein Account? Jetzt registrieren"
-            : "Zurück zum Login"}
-        </button>
+          <input
+            type="email"
+            placeholder="E-Mail"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "14px",
+              marginBottom: 12,
+              borderRadius: "8px",
+              border: "1px solid #ccc",
+            }}
+          />
+
+          <input
+            type="password"
+            placeholder="Passwort"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "14px",
+              marginBottom: 20,
+              borderRadius: "8px",
+              border: "1px solid #ccc",
+            }}
+          />
+
+          <button
+            onClick={handleAuth}
+            style={{
+              width: "100%",
+              padding: "14px",
+              background: "#007bff",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "16px",
+            }}
+          >
+            {isLogin ? "Einloggen" : "Registrieren"}
+          </button>
+
+          <button
+            onClick={() => setIsLogin(!isLogin)}
+            style={{
+              marginTop: 15,
+              color: "blue",
+              background: "none",
+              border: "none",
+            }}
+          >
+            {isLogin
+              ? "Noch kein Account? Jetzt registrieren"
+              : "Zurück zum Login"}
+          </button>
+        </div>
       </div>
     );
   }

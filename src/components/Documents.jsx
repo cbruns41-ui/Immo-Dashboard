@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useImmo } from "../context/ImmoContext";
 import { supabase } from "../supabase/supabaseClient";
-import { createWorker } from "tesseract.js";
+import Tesseract from "tesseract.js";
 
 export default function Documents() {
   const { houses } = useImmo();
@@ -13,7 +13,7 @@ export default function Documents() {
   const [photo, setPhoto] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [ocrText, setOcrText] = useState("");
-  const [analyzing, setAnalyzing] = useState(false);
+  const [ocrLoading, setOcrLoading] = useState(false);
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -21,7 +21,7 @@ export default function Documents() {
   const selectedHouse = houses.find(h => h.id === selectedHouseId);
 
   // =========================
-  // KAMERA START
+  // CAMERA START (iOS FIX)
   // =========================
   const startCamera = async () => {
     try {
@@ -35,10 +35,7 @@ export default function Documents() {
       setTimeout(() => {
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream;
-
-          videoRef.current.play().catch((err) => {
-            console.log("Video play error:", err);
-          });
+          videoRef.current.play().catch(console.error);
         }
       }, 100);
 
@@ -56,74 +53,52 @@ export default function Documents() {
   };
 
   // =========================
-  // FOTO MACHEN
+  // PHOTO CAPTURE
   // =========================
-  const takePhoto = async () => {
-    if (!videoRef.current) return;
-
+  const takePhoto = () => {
     const canvas = canvasRef.current;
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
+    const video = videoRef.current;
+
+    if (!video) return;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
 
     const ctx = canvas.getContext("2d");
-    ctx.drawImage(videoRef.current, 0, 0);
+    ctx.drawImage(video, 0, 0);
 
     const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-    setPhoto(dataUrl);
 
+    setPhoto(dataUrl);
     stopCamera();
 
-    // 👉 OCR direkt nach Foto starten
-    await runOCR(dataUrl);
+    runOCR(dataUrl);
   };
 
   // =========================
-  // OCR (TEXT ERKENNUNG)
+  // OCR (TESSERACT)
   // =========================
   const runOCR = async (image) => {
-    setAnalyzing(true);
-
     try {
-      const worker = await createWorker("deu+eng");
+      setOcrLoading(true);
 
-      const result = await worker.recognize(image);
+      const result = await Tesseract.recognize(image, "deu+eng");
 
-      const text = result.data.text;
-      setOcrText(text);
+      setOcrText(result.data.text || "");
 
-      await worker.terminate();
     } catch (err) {
       console.error("OCR Fehler:", err);
+    } finally {
+      setOcrLoading(false);
     }
-
-    setAnalyzing(false);
   };
 
   // =========================
-  // TYPE ERKENNUNG (simpel)
-  // =========================
-  const detectType = (text) => {
-    const t = text.toLowerCase();
-
-    if (t.includes("rechnung") || t.includes("invoice")) return "rechnung";
-    if (t.includes("versicherung")) return "versicherung";
-    if (t.includes("miete")) return "vertrag";
-    if (t.includes("reparatur")) return "reparatur";
-
-    return "sonstiges";
-  };
-
-  const detectTitle = (text) => {
-    const lines = text.split("\n").filter(Boolean);
-    return lines[0]?.slice(0, 60) || "Dokument";
-  };
-
-  // =========================
-  // UPLOAD
+  // UPLOAD TO SUPABASE
   // =========================
   const uploadPhoto = async () => {
     if (!photo || !selectedHouseId) {
-      alert("Bitte Foto machen und ein Haus auswählen!");
+      alert("Bitte Foto und Haus auswählen!");
       return;
     }
 
@@ -142,34 +117,30 @@ export default function Documents() {
 
       if (uploadError) throw uploadError;
 
-      // 2. Public URL
-      const { data } = supabase.storage
+      // 2. Public URL holen
+      const { data: publicUrlData } = supabase.storage
         .from("documents")
         .getPublicUrl(filePath);
 
-      const publicUrl = data.publicUrl;
+      const fileUrl = publicUrlData.publicUrl;
 
-      // 3. Auto-Kategorie + Titel
-      const type = detectType(ocrText);
-      const title = detectTitle(ocrText);
-
-      // 4. DB speichern
+      // 3. DB Eintrag
       const { error: dbError } = await supabase
         .from("documents")
         .insert({
           user_id: (await supabase.auth.getUser()).data.user.id,
           house_id: selectedHouseId,
           apartment_id: selectedApartmentId || null,
-          file_url: publicUrl,
-          title,
-          type,
-          ocr_text: ocrText,
-          created_at: new Date().toISOString()
+          file_url: fileUrl,
+          file_path: filePath,
+          type: autoDetectType(ocrText),
+          title: extractTitle(ocrText),
+          ocr_text: ocrText
         });
 
       if (dbError) throw dbError;
 
-      alert("✅ Dokument gespeichert + OCR fertig!");
+      alert("✅ Dokument gespeichert!");
 
       setPhoto(null);
       setSelectedHouseId("");
@@ -178,10 +149,32 @@ export default function Documents() {
 
     } catch (err) {
       console.error(err);
-      alert("Fehler beim Hochladen.");
+      alert("Fehler beim Upload");
     } finally {
       setUploading(false);
     }
+  };
+
+  // =========================
+  // AUTO CATEGORY
+  // =========================
+  const autoDetectType = (text) => {
+    const t = text.toLowerCase();
+
+    if (t.includes("rechnung")) return "rechnung";
+    if (t.includes("miete")) return "vertrag";
+    if (t.includes("versicherung")) return "versicherung";
+    if (t.includes("reparatur")) return "reparatur";
+
+    return "sonstiges";
+  };
+
+  // =========================
+  // TITLE EXTRACTION
+  // =========================
+  const extractTitle = (text) => {
+    if (!text) return "Dokument";
+    return text.split("\n")[0].slice(0, 60);
   };
 
   // =========================
@@ -225,29 +218,23 @@ export default function Documents() {
         </div>
       </div>
 
-      {/* MAIN */}
+      {/* CAMERA */}
       <div style={{
         background: "white",
         padding: "35px",
         borderRadius: "20px",
-        boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
-        marginBottom: "30px"
+        boxShadow: "0 8px 30px rgba(0,0,0,0.08)"
       }}>
 
         {!stream && !photo && (
-          <button
-            onClick={startCamera}
-            style={{
-              width: "100%",
-              padding: "18px",
-              background: "#0A2540",
-              color: "white",
-              border: "none",
-              borderRadius: "16px",
-              fontSize: "18px",
-              fontWeight: "600"
-            }}
-          >
+          <button onClick={startCamera} style={{
+            width: "100%",
+            padding: "18px",
+            background: "#0A2540",
+            color: "white",
+            border: "none",
+            borderRadius: "16px"
+          }}>
             📸 Kamera öffnen
           </button>
         )}
@@ -267,18 +254,14 @@ export default function Documents() {
               }}
             />
 
-            <button
-              onClick={takePhoto}
-              style={{
-                marginTop: "20px",
-                padding: "16px 40px",
-                background: "#00D4C8",
-                color: "white",
-                border: "none",
-                borderRadius: "12px",
-                fontSize: "17px"
-              }}
-            >
+            <button onClick={takePhoto} style={{
+              marginTop: "20px",
+              padding: "16px 40px",
+              background: "#00D4C8",
+              color: "white",
+              border: "none",
+              borderRadius: "12px"
+            }}>
               Foto aufnehmen
             </button>
           </div>
@@ -286,110 +269,71 @@ export default function Documents() {
 
         {photo && (
           <div style={{ textAlign: "center" }}>
-            <img
-              src={photo}
-              alt="Dokument"
-              style={{
-                width: "100%",
-                maxHeight: "420px",
-                borderRadius: "16px",
-                objectFit: "contain"
-              }}
-            />
+            <img src={photo} style={{
+              width: "100%",
+              maxHeight: "420px",
+              borderRadius: "16px"
+            }} />
 
-            {analyzing && <p>🔍 OCR analysiert...</p>}
-
-            {ocrText && (
-              <div style={{
-                marginTop: 15,
-                padding: 15,
+            {ocrLoading ? (
+              <p>OCR läuft...</p>
+            ) : (
+              <pre style={{
+                whiteSpace: "pre-wrap",
                 background: "#f1f5f9",
-                borderRadius: 10,
-                fontSize: 12,
-                textAlign: "left",
-                maxHeight: 150,
-                overflow: "auto"
+                padding: "10px",
+                borderRadius: "10px",
+                marginTop: "10px"
               }}>
                 {ocrText}
-              </div>
+              </pre>
             )}
 
-            <div style={{ marginTop: "25px", display: "flex", gap: "15px" }}>
-              <button
-                onClick={() => setPhoto(null)}
-                style={{
-                  flex: 1,
-                  padding: "16px",
-                  background: "#f1f5f9",
-                  border: "none",
-                  borderRadius: "12px"
-                }}
-              >
-                Neu machen
+            <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+              <button onClick={() => setPhoto(null)} style={{ flex: 1 }}>
+                Neu
               </button>
 
-              <button
-                onClick={uploadPhoto}
-                disabled={uploading}
-                style={{
-                  flex: 1,
-                  padding: "16px",
-                  background: "#0A2540",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "12px"
-                }}
-              >
-                {uploading ? "Wird hochgeladen..." : "Speichern"}
+              <button onClick={uploadPhoto} disabled={uploading} style={{
+                flex: 1,
+                background: "#0A2540",
+                color: "white"
+              }}>
+                {uploading ? "Speichert..." : "Speichern"}
               </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* STORAGE TARGET */}
+      {/* TARGET SELECT */}
       {photo && (
         <div style={{
+          marginTop: "20px",
           background: "white",
-          padding: "35px",
-          borderRadius: "20px",
-          boxShadow: "0 8px 30px rgba(0,0,0,0.08)"
+          padding: "25px",
+          borderRadius: "20px"
         }}>
-          <h3>Speicherort auswählen</h3>
+          <h3>Zuordnen</h3>
 
-          <select
-            value={selectedHouseId}
-            onChange={e => setSelectedHouseId(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "16px",
-              marginBottom: "20px",
-              borderRadius: "12px",
-              border: "1px solid #e0e0e0"
-            }}
+          <select value={selectedHouseId}
+            onChange={(e) => setSelectedHouseId(e.target.value)}
+            style={{ width: "100%", padding: "14px" }}
           >
-            <option value="">Haus auswählen...</option>
+            <option value="">Haus wählen</option>
             {houses.map(h => (
               <option key={h.id} value={h.id}>{h.name}</option>
             ))}
           </select>
 
           {selectedHouse && (
-            <select
-              value={selectedApartmentId}
-              onChange={e => setSelectedApartmentId(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "16px",
-                borderRadius: "12px",
-                border: "1px solid #e0e0e0"
-              }}
+            <select value={selectedApartmentId}
+              onChange={(e) => setSelectedApartmentId(e.target.value)}
+              style={{ width: "100%", padding: "14px", marginTop: "10px" }}
             >
-              <option value="">Wohnung (optional)</option>
-              {selectedHouse.apartments?.map(apt => (
-                <option key={apt.id} value={apt.id}>
-                  {apt.name} – {apt.tenant}
-                </option>
+              <option value="">Wohnung optional</option>
+              {selectedHouse.apartments?.map(a => (
+                <option key={a.id} value={a.id}>{a.name}</option>
               ))}
             </select>
           )}

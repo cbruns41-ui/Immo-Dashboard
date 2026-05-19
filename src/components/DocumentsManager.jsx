@@ -7,8 +7,8 @@ export default function DocumentsManager() {
 
   const [documents, setDocuments] = useState([]);
   const [selectedHouse, setSelectedHouse] = useState("");
+  const [selectedApartment, setSelectedApartment] = useState("");
   const [selectedType, setSelectedType] = useState("");
-  const [search, setSearch] = useState(""); // 🔥 NEU: Volltextsuche
   const [loading, setLoading] = useState(true);
 
   // =========================
@@ -57,38 +57,30 @@ export default function DocumentsManager() {
   };
 
   // =========================
-  // 🧠 AUTO KATEGORIE (für später Upload nutzbar)
+  // HELPERS
   // =========================
-  const detectType = (text = "") => {
-    const t = text.toLowerCase();
+  const getHouse = (id) => houses.find((h) => h.id === id);
 
-    if (t.includes("miete") || t.includes("rechnung")) return "rechnung";
-    if (t.includes("strom") || t.includes("gas") || t.includes("wasser")) return "nebenkosten";
-    if (t.includes("versicherung")) return "versicherung";
-    if (t.includes("vertrag")) return "vertrag";
-    if (t.includes("reparatur") || t.includes("handwerker")) return "reparatur";
-
-    return "sonstiges";
+  const getApartment = (houseId, aptId) => {
+    const house = houses.find((h) => h.id === houseId);
+    return house?.apartments?.find((a) => a.id === aptId);
   };
 
   // =========================
-  // FILTER + SEARCH (ERWEITERT)
+  // FILTERS
   // =========================
   const filteredDocs = documents.filter((doc) => {
     const houseMatch = selectedHouse ? doc.house_id === selectedHouse : true;
+    const aptMatch = selectedApartment ? doc.apartment_id === selectedApartment : true;
     const typeMatch = selectedType ? doc.type === selectedType : true;
 
-    const searchMatch = search
-      ? (doc.name || "").toLowerCase().includes(search.toLowerCase()) ||
-        (doc.ocr_text || "").toLowerCase().includes(search.toLowerCase())
-      : true;
-
-    return houseMatch && typeMatch && searchMatch;
+    return houseMatch && aptMatch && typeMatch;
   });
 
-  // =========================
-  // UI
-  // =========================
+  // Apartments dynamisch je Haus
+  const apartmentsOfSelectedHouse =
+    houses.find((h) => h.id === selectedHouse)?.apartments || [];
+
   return (
     <div style={{ padding: "20px 15px", maxWidth: "1280px", margin: "0 auto" }}>
 
@@ -119,10 +111,10 @@ export default function DocumentsManager() {
 
         <div>
           <h1 style={{ margin: 0, fontSize: "32px", color: "#0A2540" }}>
-            Dokumenten Manager
+            Dokumente verwalten
           </h1>
           <p style={{ margin: 0, color: "#666", fontSize: "18px" }}>
-            Suche, Filter & Verwaltung
+            Haus- & Wohnungsdokumente strukturiert organisieren
           </p>
         </div>
       </div>
@@ -139,23 +131,13 @@ export default function DocumentsManager() {
         flexWrap: "wrap"
       }}>
 
-        {/* 🔍 SEARCH */}
-        <input
-          placeholder="Suche (Name / OCR Text)"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{
-            flex: 2,
-            padding: "14px",
-            borderRadius: "12px",
-            border: "1px solid #e0e0e0",
-            minWidth: "200px"
-          }}
-        />
-
+        {/* HOUSE */}
         <select
           value={selectedHouse}
-          onChange={(e) => setSelectedHouse(e.target.value)}
+          onChange={(e) => {
+            setSelectedHouse(e.target.value);
+            setSelectedApartment("");
+          }}
           style={{
             padding: "14px",
             borderRadius: "12px",
@@ -172,6 +154,27 @@ export default function DocumentsManager() {
           ))}
         </select>
 
+        {/* APARTMENT */}
+        <select
+          value={selectedApartment}
+          onChange={(e) => setSelectedApartment(e.target.value)}
+          style={{
+            padding: "14px",
+            borderRadius: "12px",
+            border: "1px solid #e0e0e0",
+            flex: 1,
+            minWidth: "200px"
+          }}
+        >
+          <option value="">Alle Wohnungen</option>
+          {apartmentsOfSelectedHouse.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name}
+            </option>
+          ))}
+        </select>
+
+        {/* TYPE */}
         <select
           value={selectedType}
           onChange={(e) => setSelectedType(e.target.value)}
@@ -190,6 +193,7 @@ export default function DocumentsManager() {
           <option value="reparatur">Reparatur</option>
           <option value="vertrag">Vertrag</option>
         </select>
+
       </div>
 
       {/* CONTENT */}
@@ -211,7 +215,8 @@ export default function DocumentsManager() {
             gap: "15px"
           }}>
             {filteredDocs.map((doc) => {
-              const house = houses.find(h => h.id === doc.house_id);
+              const house = getHouse(doc.house_id);
+              const apartment = getApartment(doc.house_id, doc.apartment_id);
 
               return (
                 <div
@@ -242,8 +247,14 @@ export default function DocumentsManager() {
                   {/* INFO */}
                   <div>
                     <p style={{ margin: 0, fontWeight: "600" }}>
-                      {house?.name || "Unbekanntes Haus"}
+                      🏠 {house?.name || "Unbekannt"}
                     </p>
+
+                    {apartment && (
+                      <p style={{ margin: 0, color: "#666", fontSize: "13px" }}>
+                        🏢 {apartment.name}
+                      </p>
+                    )}
 
                     <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>
                       Typ: {doc.type}
