@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../supabase/supabaseClient";
+import { Home } from "lucide-react";
 
 export default function Auth({ children }) {
   const [user, setUser] = useState(null);
@@ -66,11 +67,7 @@ export default function Auth({ children }) {
      LOADING
   ========================= */
   if (loading) {
-    return (
-      <div style={loadingStyle}>
-        App wird geladen...
-      </div>
-    );
+    return <div style={loadingStyle}>App wird geladen...</div>;
   }
 
   /* =========================
@@ -80,7 +77,9 @@ export default function Auth({ children }) {
     return (
       <div style={page}>
         <div style={card}>
-          <div style={logo}>🏠</div>
+          <div style={iconWrap}>
+            <Home size={34} />
+          </div>
 
           <h1 style={title}>ImmoForge</h1>
           <p style={subtitle}>Immobilien Management System</p>
@@ -106,19 +105,13 @@ export default function Auth({ children }) {
                 {isLogin ? "Einloggen" : "Registrieren"}
               </button>
 
-              <button
-                onClick={() => setIsLogin(!isLogin)}
-                style={linkBtn}
-              >
+              <button onClick={() => setIsLogin(!isLogin)} style={linkBtn}>
                 {isLogin
                   ? "Noch kein Account? Registrieren"
                   : "Zurück zum Login"}
               </button>
 
-              <button
-                onClick={() => setForgotMode(true)}
-                style={linkBtn}
-              >
+              <button onClick={() => setForgotMode(true)} style={linkBtn}>
                 Passwort vergessen
               </button>
             </>
@@ -134,10 +127,7 @@ export default function Auth({ children }) {
                 Reset Link senden
               </button>
 
-              <button
-                onClick={() => setForgotMode(false)}
-                style={linkBtn}
-              >
+              <button onClick={() => setForgotMode(false)} style={linkBtn}>
                 Zurück
               </button>
             </>
@@ -177,7 +167,7 @@ export default function Auth({ children }) {
 }
 
 /* =========================
-   STYLES (SAAS MATCH APP.JSX)
+   STYLES (IMPROVED UI)
 ========================= */
 
 const loadingStyle = {
@@ -197,22 +187,31 @@ const page = {
   justifyContent: "center",
   background: "#f6f7fb",
   padding: 20,
+  fontFamily: "Inter, Arial",
 };
 
 const card = {
   width: "100%",
   maxWidth: 420,
   background: "white",
-  borderRadius: 16,
-  padding: 26,
+  borderRadius: 18,
+  padding: 28,
   border: "1px solid #e2e8f0",
-  boxShadow: "0 8px 24px rgba(0,0,0,0.05)",
+  boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
   textAlign: "center",
+  boxSizing: "border-box",
 };
 
-const logo = {
-  fontSize: 34,
-  marginBottom: 6,
+const iconWrap = {
+  width: 64,
+  height: 64,
+  margin: "0 auto 12px",
+  borderRadius: 16,
+  background: "#0f172a",
+  color: "white",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
 };
 
 const title = {
@@ -230,18 +229,19 @@ const subtitle = {
 
 const input = {
   width: "100%",
-  padding: 12,
+  padding: 14,
   marginBottom: 10,
-  borderRadius: 10,
+  borderRadius: 12,
   border: "1px solid #e2e8f0",
   fontSize: 14,
   outline: "none",
+  boxSizing: "border-box",
 };
 
 const primaryBtn = {
   width: "100%",
-  padding: 12,
-  borderRadius: 10,
+  padding: 14,
+  borderRadius: 12,
   border: "none",
   background: "#0f172a",
   color: "white",
