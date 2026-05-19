@@ -20,7 +20,7 @@ export default function App() {
   return (
     <div style={{ padding: 20, background: "#f8fafc", minHeight: "100vh", fontFamily: "Arial, sans-serif" }}>
 
-      {/* Zurück-Button auf allen Seiten außer Startseite */}
+      {/* Zurück-Button (erscheint auf allen Seiten außer der Startseite) */}
       {!isHome && (
         <button
           onClick={() => setCurrentPage("home")}
@@ -45,7 +45,7 @@ export default function App() {
         </button>
       )}
 
-      {/* STARTSEITE – große Kacheln */}
+      {/* STARTSEITE – große vertikale Kacheln */}
       {isHome && (
         <>
           <h1 style={{
@@ -55,7 +55,7 @@ export default function App() {
             fontSize: "28px",
             fontWeight: "700",
           }}>
-            🏠 Immo Dashboard
+            🏠 ImmoForge
           </h1>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -85,7 +85,6 @@ export default function App() {
               <div>Termine</div>
             </button>
 
-            {/* Die drei gewünschten Buttons ganz unten */}
             <button onClick={() => setCurrentPage("documents")} style={tileStyle}>
               <span style={{ fontSize: "32px" }}>📸</span>
               <div>Dokumente Fotografieren</div>
