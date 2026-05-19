@@ -9,28 +9,25 @@ export default function Auth({ children }) {
   const [password, setPassword] = useState("");
   const [isLogin, setIsLogin] = useState(true);
 
-  // Passwort-Reset Modus
   const [forgotMode, setForgotMode] = useState(false);
   const [resetSent, setResetSent] = useState(false);
 
   useEffect(() => {
     let mounted = true;
 
-    const initAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (mounted) {
-        setUser(data.session?.user ?? null);
-        setLoading(false);
-      }
-    };
-
-    initAuth();
-
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
-      setUser(session?.user ?? null);
+      setUser(data.session?.user ?? null);
       setLoading(false);
     });
+
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (!mounted) return;
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    );
 
     return () => {
       mounted = false;
@@ -40,236 +37,122 @@ export default function Auth({ children }) {
 
   const handleAuth = async () => {
     if (isLogin) {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       if (error) alert(error.message);
     } else {
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
       if (error) alert(error.message);
       else alert("Bestätigungs-Mail wurde gesendet!");
     }
   };
 
   const handleResetPassword = async () => {
-    if (!email) {
-      alert("Bitte gib deine E-Mail-Adresse ein.");
-      return;
-    }
-
     const { error } = await supabase.auth.resetPasswordForEmail(email);
-
-    if (error) {
-      alert(error.message);
-    } else {
-      setResetSent(true);
-    }
+    if (error) alert(error.message);
+    else setResetSent(true);
   };
 
   const logout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error && error.status !== 403) {
-      console.warn("Logout error:", error.message);
-    }
+    await supabase.auth.signOut();
   };
 
+  /* =========================
+     LOADING
+  ========================= */
   if (loading) {
-    return <div style={{ textAlign: "center", marginTop: "100px" }}>App wird geladen...</div>;
+    return (
+      <div style={loadingStyle}>
+        App wird geladen...
+      </div>
+    );
   }
 
+  /* =========================
+     LOGIN SCREEN
+  ========================= */
   if (!user) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          width: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#f8fafc",
-          padding: "20px",
-          boxSizing: "border-box",
-          position: "fixed",
-          top: 0,
-          left: 0,
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "420px",
-            width: "100%",
-            padding: "40px 35px",
-            background: "white",
-            borderRadius: "20px",
-            boxShadow: "0 15px 40px rgba(0,0,0,0.12)",
-            textAlign: "center",
-          }}
-        >
-          <div style={{ fontSize: "48px", marginBottom: "8px" }}>🔨</div>
-          <h1 style={{ 
-            fontSize: "32px", 
-            fontWeight: "700", 
-            color: "#0A2540", 
-            marginBottom: "6px",
-            letterSpacing: "-1px"
-          }}>
-            ImmoForge
-          </h1>
-          
-          <p style={{ 
-            fontSize: "17px", 
-            fontWeight: "600", 
-            color: "#0A2540", 
-            marginBottom: "4px" 
-          }}>
-            Deine Immobilien. Deine Kontrolle.
-          </p>
-          
-          <p style={{ 
-            fontSize: "15px", 
-            color: "#64748b", 
-            marginBottom: "32px" 
-          }}>
-            Sichere Vermietung • Übersichtliche Finanzen • Automatische Abrechnungen
-          </p>
+      <div style={page}>
+        <div style={card}>
+          <div style={logo}>🏠</div>
 
-          {/* Normaler Login / Registrieren */}
+          <h1 style={title}>ImmoForge</h1>
+          <p style={subtitle}>Immobilien Management System</p>
+
           {!forgotMode && !resetSent && (
             <>
               <input
-                type="email"
-                name="email"
-                autoComplete="email"
+                style={input}
                 placeholder="E-Mail"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "15px",
-                  marginBottom: "12px",
-                  borderRadius: "10px",
-                  border: "1px solid #e2e8f0",
-                  fontSize: "16px",
-                }}
               />
 
               <input
+                style={input}
                 type="password"
-                name="password"
-                autoComplete="current-password"
                 placeholder="Passwort"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "15px",
-                  marginBottom: "24px",
-                  borderRadius: "10px",
-                  border: "1px solid #e2e8f0",
-                  fontSize: "16px",
-                }}
               />
 
-              <button
-                onClick={handleAuth}
-                style={{
-                  width: "100%",
-                  padding: "16px",
-                  background: "linear-gradient(135deg, #0A2540, #00D4C8)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "12px",
-                  fontSize: "17px",
-                  fontWeight: "600",
-                }}
-              >
+              <button onClick={handleAuth} style={primaryBtn}>
                 {isLogin ? "Einloggen" : "Registrieren"}
               </button>
 
-              <div style={{ marginTop: "15px" }}>
-                <button
-                  onClick={() => setForgotMode(true)}
-                  style={{ color: "#0A2540", background: "none", border: "none", fontSize: "15px" }}
-                >
-                  Passwort vergessen?
-                </button>
-              </div>
-
               <button
                 onClick={() => setIsLogin(!isLogin)}
-                style={{ marginTop: "10px", color: "#0A2540", background: "none", border: "none", fontSize: "15px" }}
+                style={linkBtn}
               >
-                {isLogin ? "Noch kein Account? Jetzt registrieren" : "Zurück zum Login"}
+                {isLogin
+                  ? "Noch kein Account? Registrieren"
+                  : "Zurück zum Login"}
+              </button>
+
+              <button
+                onClick={() => setForgotMode(true)}
+                style={linkBtn}
+              >
+                Passwort vergessen
               </button>
             </>
           )}
 
-          {/* Passwort vergessen Formular */}
           {forgotMode && !resetSent && (
             <>
-              <h3 style={{ marginBottom: "20px", color: "#0A2540" }}>Passwort zurücksetzen</h3>
-              <p style={{ marginBottom: "25px", color: "#64748b", fontSize: "15px" }}>
-                Gib deine E-Mail-Adresse ein. Du erhältst einen Link zum Zurücksetzen.
+              <p style={text}>
+                Passwort Reset Link wird an deine E-Mail gesendet
               </p>
 
-              <input
-                type="email"
-                name="email"
-                autoComplete="email"
-                placeholder="E-Mail"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "15px",
-                  marginBottom: "20px",
-                  borderRadius: "10px",
-                  border: "1px solid #e2e8f0",
-                  fontSize: "16px",
-                }}
-              />
-
-              <button
-                onClick={handleResetPassword}
-                style={{
-                  width: "100%",
-                  padding: "16px",
-                  background: "linear-gradient(135deg, #0A2540, #00D4C8)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "12px",
-                  fontSize: "17px",
-                  fontWeight: "600",
-                }}
-              >
-                Reset-Link senden
+              <button onClick={handleResetPassword} style={primaryBtn}>
+                Reset Link senden
               </button>
 
               <button
-                onClick={() => { setForgotMode(false); setResetSent(false); }}
-                style={{ marginTop: "20px", color: "#0A2540", background: "none", border: "none" }}
+                onClick={() => setForgotMode(false)}
+                style={linkBtn}
               >
-                ← Zurück zum Login
+                Zurück
               </button>
             </>
           )}
 
-          {/* Erfolgsmeldung nach Reset */}
           {resetSent && (
             <>
-              <h3 style={{ color: "#0A2540", marginBottom: "15px" }}>✅ Link gesendet!</h3>
-              <p style={{ color: "#64748b", marginBottom: "30px" }}>
-                Schau in deinem Postfach nach (auch im Spam-Ordner).
-              </p>
+              <p style={success}>Reset Link gesendet ✔</p>
+
               <button
-                onClick={() => { setForgotMode(false); setResetSent(false); setEmail(""); }}
-                style={{
-                  width: "100%",
-                  padding: "16px",
-                  background: "#0A2540",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "12px",
+                onClick={() => {
+                  setForgotMode(false);
+                  setResetSent(false);
                 }}
+                style={primaryBtn}
               >
                 Zurück zum Login
               </button>
@@ -280,24 +163,123 @@ export default function Auth({ children }) {
     );
   }
 
+  /* =========================
+     APP WRAPPER
+  ========================= */
   return (
     <>
-      <div style={{ position: "fixed", top: "15px", right: "15px", zIndex: 9999 }}>
-        <button
-          onClick={logout}
-          style={{
-            padding: "8px 18px",
-            background: "#dc3545",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-          }}
-        >
-          Abmelden
-        </button>
-      </div>
-
+      <button onClick={logout} style={logoutBtn}>
+        Logout
+      </button>
       {children}
     </>
   );
 }
+
+/* =========================
+   STYLES (SAAS MATCH APP.JSX)
+========================= */
+
+const loadingStyle = {
+  minHeight: "100vh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "#f6f7fb",
+  color: "#64748b",
+  fontSize: 14,
+};
+
+const page = {
+  minHeight: "100vh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "#f6f7fb",
+  padding: 20,
+};
+
+const card = {
+  width: "100%",
+  maxWidth: 420,
+  background: "white",
+  borderRadius: 16,
+  padding: 26,
+  border: "1px solid #e2e8f0",
+  boxShadow: "0 8px 24px rgba(0,0,0,0.05)",
+  textAlign: "center",
+};
+
+const logo = {
+  fontSize: 34,
+  marginBottom: 6,
+};
+
+const title = {
+  fontSize: 26,
+  fontWeight: 800,
+  marginBottom: 4,
+  color: "#0f172a",
+};
+
+const subtitle = {
+  fontSize: 13,
+  color: "#64748b",
+  marginBottom: 18,
+};
+
+const input = {
+  width: "100%",
+  padding: 12,
+  marginBottom: 10,
+  borderRadius: 10,
+  border: "1px solid #e2e8f0",
+  fontSize: 14,
+  outline: "none",
+};
+
+const primaryBtn = {
+  width: "100%",
+  padding: 12,
+  borderRadius: 10,
+  border: "none",
+  background: "#0f172a",
+  color: "white",
+  fontWeight: 600,
+  cursor: "pointer",
+  marginTop: 6,
+};
+
+const linkBtn = {
+  width: "100%",
+  marginTop: 8,
+  background: "none",
+  border: "none",
+  color: "#475569",
+  fontSize: 13,
+  cursor: "pointer",
+};
+
+const text = {
+  fontSize: 13,
+  color: "#64748b",
+  marginBottom: 10,
+};
+
+const success = {
+  fontSize: 14,
+  color: "#16a34a",
+  fontWeight: 600,
+};
+
+const logoutBtn = {
+  position: "fixed",
+  top: 18,
+  right: 18,
+  padding: "8px 12px",
+  borderRadius: 999,
+  border: "1px solid #e2e8f0",
+  background: "white",
+  cursor: "pointer",
+  fontSize: 12,
+};

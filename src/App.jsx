@@ -1,11 +1,23 @@
 import { useState } from "react";
 
+import {
+  LayoutDashboard,
+  Home,
+  TrendingUp,
+  FileText,
+  Calendar,
+  Camera,
+  FolderOpen,
+  Settings as SettingsIcon,
+  ArrowLeft,
+} from "lucide-react";
+
 import Dashboard from "./components/Dashboard";
 import Houses from "./components/Houses";
 import Appointments from "./components/Appointments";
 import Finances from "./components/Finances";
 import Abrechnung from "./components/Abrechnung";
-import Settings from "./components/Settings";
+import SettingsPage from "./components/Settings";
 import Cashflow from "./components/Cashflow.jsx";
 import Documents from "./components/Documents";
 import DocumentsManager from "./components/DocumentsManager";
@@ -17,93 +29,63 @@ export default function App() {
 
   const isHome = currentPage === "home";
 
-  return (
-    <div style={{ padding: 20, background: "#f8fafc", minHeight: "100vh", fontFamily: "Arial, sans-serif" }}>
+  const navigate = (page) => setCurrentPage(page);
+  const goHome = () => setCurrentPage("home");
 
-      {/* Zurück-Button (erscheint auf allen Seiten außer der Startseite) */}
+  const tiles = [
+    { id: "uebersicht", label: "Übersicht", icon: LayoutDashboard, desc: "KPIs & Überblick" },
+    { id: "houses", label: "Häuser", icon: Home, desc: "Objekte verwalten" },
+    { id: "cashflow", label: "Cashflow", icon: TrendingUp, desc: "Einnahmen & Ausgaben" },
+    { id: "abrechnung", label: "Abrechnung", icon: FileText, desc: "Nebenkosten" },
+    { id: "appointments", label: "Termine", icon: Calendar, desc: "Besichtigungen" },
+    { id: "documents", label: "Dokumente", icon: Camera, desc: "Scans & Fotos" },
+    { id: "documentsmanager", label: "Manager", icon: FolderOpen, desc: "Dateiverwaltung" },
+    { id: "einstellungen", label: "Settings", icon: SettingsIcon, desc: "Konfiguration" },
+  ];
+
+  return (
+    <div style={page}>
+      {/* BACK BUTTON */}
       {!isHome && (
-        <button
-          onClick={() => setCurrentPage("home")}
-          style={{
-            position: "fixed",
-            top: "25px",
-            left: "25px",
-            zIndex: 1000,
-            background: "white",
-            border: "none",
-            borderRadius: "50%",
-            width: "52px",
-            height: "52px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "28px",
-            boxShadow: "0 4px 15px rgba(0,0,0,0.15)",
-          }}
-        >
-          ←
+        <button onClick={goHome} style={backBtn}>
+          <ArrowLeft size={18} />
+          Home
         </button>
       )}
 
-      {/* STARTSEITE – große vertikale Kacheln */}
+      {/* HOME */}
       {isHome && (
-        <>
-          <h1 style={{
-            textAlign: "center",
-            color: "#0A2540",
-            marginBottom: 30,
-            fontSize: "28px",
-            fontWeight: "700",
-          }}>
-            🏠 ImmoForge
-          </h1>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-
-            <button onClick={() => setCurrentPage("uebersicht")} style={tileStyle}>
-              <span style={{ fontSize: "32px" }}>📊</span>
-              <div>Übersicht</div>
-            </button>
-
-            <button onClick={() => setCurrentPage("houses")} style={tileStyle}>
-              <span style={{ fontSize: "32px" }}>🏠</span>
-              <div>Häuser & Wohnungen</div>
-            </button>
-
-            <button onClick={() => setCurrentPage("cashflow")} style={tileStyle}>
-              <span style={{ fontSize: "32px" }}>📈</span>
-              <div>Cashflow</div>
-            </button>
-
-            <button onClick={() => setCurrentPage("abrechnung")} style={tileStyle}>
-              <span style={{ fontSize: "32px" }}>📋</span>
-              <div>Abrechnung</div>
-            </button>
-
-            <button onClick={() => setCurrentPage("appointments")} style={tileStyle}>
-              <span style={{ fontSize: "32px" }}>📅</span>
-              <div>Termine</div>
-            </button>
-
-            <button onClick={() => setCurrentPage("documents")} style={tileStyle}>
-              <span style={{ fontSize: "32px" }}>📸</span>
-              <div>Dokumente Fotografieren</div>
-            </button>
-
-            <button onClick={() => setCurrentPage("documentsmanager")} style={tileStyle}>
-              <span style={{ fontSize: "32px" }}>📁</span>
-              <div>Dokument Manager</div>
-            </button>
-
-            <button onClick={() => setCurrentPage("einstellungen")} style={tileStyle}>
-              <span style={{ fontSize: "32px" }}>⚙️</span>
-              <div>Einstellungen</div>
-            </button>
+        <div style={container}>
+          <div style={header}>
+            <h1 style={title}>ImmoForge</h1>
+            <p style={subtitle}>Immobilien Management System</p>
           </div>
-        </>
+
+          <div style={grid}>
+            {tiles.map((t) => {
+              const Icon = t.icon;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => navigate(t.id)}
+                  style={card}
+                >
+                  <div style={iconBox}>
+                    <Icon size={18} />
+                  </div>
+
+                  <div>
+                    <div style={label}>{t.label}</div>
+                    <div style={desc}>{t.desc}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       )}
 
-      {/* Die restlichen Seiten */}
+      {/* PAGES */}
       {currentPage === "uebersicht" && <Dashboard />}
       {currentPage === "houses" && <Houses />}
       {currentPage === "appointments" && <Appointments />}
@@ -112,26 +94,99 @@ export default function App() {
       {currentPage === "abrechnung" && <Abrechnung />}
       {currentPage === "documents" && <Documents />}
       {currentPage === "documentsmanager" && <DocumentsManager />}
-      {currentPage === "einstellungen" && <Settings />}
+      {currentPage === "einstellungen" && <SettingsPage />}
 
       <InstallButton />
     </div>
   );
 }
 
-// Stil für die großen Kacheln
-const tileStyle = {
-  background: "white",
-  padding: "24px 20px",
-  borderRadius: "20px",
-  boxShadow: "0 8px 30px rgba(0,0,0,0.1)",
-  border: "none",
-  textAlign: "left",
-  fontSize: "20px",
-  fontWeight: "600",
-  color: "#0A2540",
+/* =========================
+   SAAS STYLE
+========================= */
+
+const page = {
+  minHeight: "100vh",
+  padding: 24,
+  background: "#f6f7fb",
+  fontFamily: "Inter, Arial",
+  color: "#0f172a",
+};
+
+const container = {
+  maxWidth: 1100,
+  margin: "0 auto",
+};
+
+const header = {
+  marginBottom: 24,
+};
+
+const title = {
+  fontSize: 34,
+  fontWeight: 800,
+  marginBottom: 4,
+};
+
+const subtitle = {
+  fontSize: 14,
+  color: "#64748b",
+};
+
+const grid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, 1fr)",
+  gap: 14,
+};
+
+/* CARD */
+const card = {
   display: "flex",
   alignItems: "center",
-  gap: "20px",
-  width: "100%"
+  gap: 12,
+  padding: 16,
+  borderRadius: 14,
+  background: "white",
+  border: "1px solid #e2e8f0",
+  boxShadow: "0 6px 18px rgba(0,0,0,0.04)",
+  cursor: "pointer",
+  textAlign: "left",
+};
+
+const iconBox = {
+  width: 34,
+  height: 34,
+  borderRadius: 10,
+  background: "#f1f5f9",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
+const label = {
+  fontSize: 14,
+  fontWeight: 600,
+};
+
+const desc = {
+  fontSize: 12,
+  color: "#64748b",
+};
+
+const backBtn = {
+  position: "fixed",
+  top: 18,
+  left: 18,
+  zIndex: 9999,
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  padding: "10px 14px",
+  borderRadius: 999,
+  background: "white",
+  border: "1px solid #e2e8f0",
+  fontSize: 13,
+  fontWeight: 600,
+  cursor: "pointer",
+  boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
 };

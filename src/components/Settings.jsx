@@ -1,7 +1,12 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useImmo } from "../context/ImmoContext";
 import { dataService } from "../services/dataService";
+import {
+  User,
+  CreditCard,
+  Shield,
+  FileText
+} from "lucide-react";
 
 export default function Settings() {
   const { vermieter, setVermieter, user } = useImmo();
@@ -9,14 +14,13 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  // =========================
-  // AUTOSAVE TIMER
-  // =========================
+  const [activeTab, setActiveTab] = useState("personal");
+
   const saveTimeout = useRef(null);
   const firstLoad = useRef(true);
 
   // =========================
-  // INPUT ÄNDERUNG
+  // INPUT CHANGE (UNVERÄNDERT)
   // =========================
   const handleChange = (e) => {
     setVermieter({
@@ -26,52 +30,39 @@ export default function Settings() {
   };
 
   // =========================
-  // AUTOSAVE
+  // AUTOSAVE (UNVERÄNDERT)
   // =========================
   useEffect(() => {
-    // Erstes Laden ignorieren
     if (firstLoad.current) {
       firstLoad.current = false;
       return;
     }
 
-    // Kein User
     if (!user?.id) return;
 
-    // Timeout löschen
     if (saveTimeout.current) {
       clearTimeout(saveTimeout.current);
     }
 
-    // Neue Speicherung starten
     saveTimeout.current = setTimeout(async () => {
       try {
         setSaving(true);
 
-        await dataService.saveVermieter(
-          user.id,
-          vermieter
-        );
+        await dataService.saveVermieter(user.id, vermieter);
 
         setMessage("✅ Automatisch gespeichert");
 
-        setTimeout(() => {
-          setMessage("");
-        }, 2500);
+        setTimeout(() => setMessage(""), 2500);
       } catch (error) {
         console.error(error);
-
         setMessage("❌ Fehler beim Speichern");
 
-        setTimeout(() => {
-          setMessage("");
-        }, 4000);
+        setTimeout(() => setMessage(""), 4000);
       } finally {
         setSaving(false);
       }
     }, 800);
 
-    // Cleanup
     return () => {
       if (saveTimeout.current) {
         clearTimeout(saveTimeout.current);
@@ -80,291 +71,299 @@ export default function Settings() {
   }, [vermieter, user, user?.id]);
 
   return (
-    <div
-      style={{
-        padding: "20px 15px",
-        maxWidth: "1280px",
-        margin: "0 auto",
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          background: "white",
-          padding: "28px 32px",
-          borderRadius: "20px",
-          boxShadow:
-            "0 8px 30px rgba(0,0,0,0.1)",
-          marginBottom: "32px",
-          display: "flex",
-          alignItems: "center",
-          gap: "18px",
-        }}
-      >
-        <div
-          style={{
-            width: "62px",
-            height: "62px",
-            background:
-              "linear-gradient(135deg, #0A2540, #00D4C8)",
-            color: "white",
-            borderRadius: "50%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "32px",
-            boxShadow:
-              "0 4px 15px rgba(0,212,200,0.3)",
-          }}
-        >
-          ⚙️
-        </div>
+    <div style={page}>
+      <div style={container}>
 
-        <div>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: "32px",
-              color: "#0A2540",
-            }}
-          >
-            Einstellungen
-          </h1>
+        {/* HEADER */}
+        <div style={headerCard}>
+          <div style={iconCircle}>⚙️</div>
 
-          <p
-            style={{
-              margin: 0,
-              color: "#666",
-              fontSize: "18px",
-            }}
-          >
-            Persönliche Daten &amp; Bankverbindung
-          </p>
-        </div>
-      </div>
-
-      {/* Main Form Card */}
-      <div
-        style={{
-          background: "white",
-          padding: "40px 35px",
-          borderRadius: "20px",
-          boxShadow:
-            "0 8px 30px rgba(0,0,0,0.08)",
-        }}
-      >
-        <h3
-          style={{
-            marginBottom: "28px",
-            color: "#0A2540",
-            fontSize: "24px",
-          }}
-        >
-          Persönliche Daten (erscheinen in PDF-Abrechnungen)
-        </h3>
-
-        <input
-          name="name"
-          value={vermieter.name || ""}
-          onChange={handleChange}
-          placeholder="Vollständiger Name"
-          style={{
-            width: "100%",
-            padding: "16px",
-            marginBottom: "20px",
-            borderRadius: "12px",
-            border: "1px solid #e0e0e0",
-            fontSize: "16px",
-          }}
-        />
-
-        <input
-          name="adresse"
-          value={vermieter.adresse || ""}
-          onChange={handleChange}
-          placeholder="Straße + Hausnummer"
-          style={{
-            width: "100%",
-            padding: "16px",
-            marginBottom: "20px",
-            borderRadius: "12px",
-            border: "1px solid #e0e0e0",
-            fontSize: "16px",
-          }}
-        />
-
-        <div
-          style={{
-            display: "flex",
-            gap: "20px",
-            marginBottom: "28px",
-          }}
-        >
-          <div style={{ flex: 1 }}>
-            <input
-              name="plz"
-              value={vermieter.plz || ""}
-              onChange={handleChange}
-              placeholder="PLZ"
-              style={{
-                width: "100%",
-                padding: "16px",
-                borderRadius: "12px",
-                border: "1px solid #e0e0e0",
-                fontSize: "16px",
-              }}
-            />
-          </div>
-
-          <div style={{ flex: 2 }}>
-            <input
-              name="ort"
-              value={vermieter.ort || ""}
-              onChange={handleChange}
-              placeholder="Ort"
-              style={{
-                width: "100%",
-                padding: "16px",
-                borderRadius: "12px",
-                border: "1px solid #e0e0e0",
-                fontSize: "16px",
-              }}
-            />
+          <div style={{ width: "100%", textAlign: "center" }}>
+            <h1 style={title}>Einstellungen</h1>
+            <p style={subtitle}>Verwaltung & persönliche Daten</p>
           </div>
         </div>
 
-        <input
-          name="telefon"
-          value={vermieter.telefon || ""}
-          onChange={handleChange}
-          placeholder="Telefon"
-          style={{
-            width: "100%",
-            padding: "16px",
-            marginBottom: "20px",
-            borderRadius: "12px",
-            border: "1px solid #e0e0e0",
-            fontSize: "16px",
-          }}
-        />
+        {/* NAV BUTTONS */}
+        <div style={navGrid}>
 
-        <input
-          name="email"
-          value={vermieter.email || ""}
-          onChange={handleChange}
-          placeholder="E-Mail"
-          style={{
-            width: "100%",
-            padding: "16px",
-            marginBottom: "32px",
-            borderRadius: "12px",
-            border: "1px solid #e0e0e0",
-            fontSize: "16px",
-          }}
-        />
+          <button
+            onClick={() => setActiveTab("personal")}
+            style={{
+              ...navBtn,
+              ...(activeTab === "personal" ? navBtnActive : {})
+            }}
+          >
+            <User size={18} />
+            Persönliche Daten
+          </button>
 
-        <h4
-          style={{
-            marginBottom: "20px",
-            color: "#0A2540",
-            fontSize: "20px",
-          }}
-        >
-          Bankdaten
-        </h4>
+          <button style={navBtn}>
+            <CreditCard size={18} />
+            Bankdaten
+          </button>
 
-        <input
-          name="iban"
-          value={vermieter.iban || ""}
-          onChange={handleChange}
-          placeholder="IBAN"
-          style={{
-            width: "100%",
-            padding: "16px",
-            marginBottom: "20px",
-            borderRadius: "12px",
-            border: "1px solid #e0e0e0",
-            fontSize: "16px",
-          }}
-        />
+          <button style={navBtn}>
+            <Shield size={18} />
+            Sicherheit
+          </button>
 
-        <input
-          name="bic"
-          value={vermieter.bic || ""}
-          onChange={handleChange}
-          placeholder="BIC"
-          style={{
-            width: "100%",
-            padding: "16px",
-            marginBottom: "20px",
-            borderRadius: "12px",
-            border: "1px solid #e0e0e0",
-            fontSize: "16px",
-          }}
-        />
+          <button style={navBtn}>
+            <FileText size={18} />
+            PDF Einstellungen
+          </button>
 
-        <input
-          name="bankname"
-          value={vermieter.bankname || ""}
-          onChange={handleChange}
-          placeholder="Bankname (optional)"
-          style={{
-            width: "100%",
-            padding: "16px",
-            marginBottom: "10px",
-            borderRadius: "12px",
-            border: "1px solid #e0e0e0",
-            fontSize: "16px",
-          }}
-        />
+        </div>
 
-        {/* Status */}
-        <div
-          style={{
-            minHeight: "32px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginTop: "16px",
-          }}
-        >
-          {saving ? (
-            <p
-              style={{
-                margin: 0,
-                color: "#666",
-                fontWeight: "600",
-                fontSize: "15px",
-              }}
-            >
-              💾 Speichert...
-            </p>
-          ) : message ? (
-            <p
-              style={{
-                margin: 0,
-                color: message.includes("✅")
-                  ? "#28a745"
-                  : "#dc3545",
-                fontWeight: "600",
-                fontSize: "15px",
-              }}
-            >
-              {message}
-            </p>
-          ) : (
-            <p
-              style={{
-                margin: 0,
-                color: "#999",
-                fontSize: "14px",
-              }}
-            >
-              Änderungen werden automatisch gespeichert
-            </p>
+        {/* CONTENT */}
+        <div style={contentCard}>
+
+          {activeTab === "personal" && (
+            <>
+              <h3 style={sectionTitle}>
+                Persönliche Daten (erscheinen in PDF-Abrechnungen)
+              </h3>
+
+              <input
+                name="name"
+                value={vermieter.name || ""}
+                onChange={handleChange}
+                placeholder="Vollständiger Name"
+                style={input}
+              />
+
+              <input
+                name="adresse"
+                value={vermieter.adresse || ""}
+                onChange={handleChange}
+                placeholder="Straße + Hausnummer"
+                style={input}
+              />
+
+              <div style={row}>
+                <input
+                  name="plz"
+                  value={vermieter.plz || ""}
+                  onChange={handleChange}
+                  placeholder="PLZ"
+                  style={{ ...input, flex: 1 }}
+                />
+
+                <input
+                  name="ort"
+                  value={vermieter.ort || ""}
+                  onChange={handleChange}
+                  placeholder="Ort"
+                  style={{ ...input, flex: 2 }}
+                />
+              </div>
+
+              <input
+                name="telefon"
+                value={vermieter.telefon || ""}
+                onChange={handleChange}
+                placeholder="Telefon"
+                style={input}
+              />
+
+              <input
+                name="email"
+                value={vermieter.email || ""}
+                onChange={handleChange}
+                placeholder="E-Mail"
+                style={input}
+              />
+
+              <h4 style={subTitle}>Bankdaten</h4>
+
+              <input
+                name="iban"
+                value={vermieter.iban || ""}
+                onChange={handleChange}
+                placeholder="IBAN"
+                style={input}
+              />
+
+              <input
+                name="bic"
+                value={vermieter.bic || ""}
+                onChange={handleChange}
+                placeholder="BIC"
+                style={input}
+              />
+
+              <input
+                name="bankname"
+                value={vermieter.bankname || ""}
+                onChange={handleChange}
+                placeholder="Bankname"
+                style={input}
+              />
+            </>
           )}
+
+          {activeTab !== "personal" && (
+            <div style={emptyState}>
+              Dieser Bereich kommt bald 🚧
+            </div>
+          )}
+
+          {/* STATUS */}
+          <div style={statusBox}>
+            {saving ? (
+              <p style={statusText}>💾 Speichert...</p>
+            ) : message ? (
+              <p
+                style={{
+                  ...statusText,
+                  color: message.includes("✅") ? "#0f172a" : "#dc2626"
+                }}
+              >
+                {message}
+              </p>
+            ) : (
+              <p style={{ color: "#64748b", fontSize: 13 }}>
+                Änderungen werden automatisch gespeichert
+              </p>
+            )}
+          </div>
+
         </div>
       </div>
     </div>
   );
 }
+
+/* =========================
+   SAAS DASHBOARD STYLE
+========================= */
+
+const page = {
+  minHeight: "100vh",
+  padding: 24,
+  background: "#f6f7fb",
+  fontFamily: "Inter, Arial",
+  color: "#0f172a",
+};
+
+const container = {
+  maxWidth: 1100,
+  margin: "0 auto",
+};
+
+const headerCard = {
+  background: "white",
+  padding: "28px 32px",
+  borderRadius: 18,
+  border: "1px solid #e2e8f0",
+  boxShadow: "0 6px 18px rgba(0,0,0,0.04)",
+  marginBottom: 28,
+  display: "flex",
+  alignItems: "center",
+  gap: 18,
+};
+
+const iconCircle = {
+  width: 56,
+  height: 56,
+  borderRadius: "50%",
+  background: "#0f172a",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "white",
+};
+
+const title = {
+  fontSize: 30,
+  fontWeight: 800,
+  margin: 0,
+  textAlign: "center",
+};
+
+const subtitle = {
+  margin: 0,
+  color: "#64748b",
+  textAlign: "center",
+};
+
+const navGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gap: 14,
+  marginBottom: 28,
+};
+
+const navBtn = {
+  padding: 16,
+  borderRadius: 14,
+  border: "1px solid #e2e8f0",
+  background: "white",
+  cursor: "pointer",
+  fontWeight: 600,
+  color: "#0f172a",
+  boxShadow: "0 4px 10px rgba(0,0,0,0.03)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 8,
+};
+
+const navBtnActive = {
+  background: "#0f172a",
+  color: "white",
+  border: "1px solid #0f172a",
+};
+
+const contentCard = {
+  background: "white",
+  padding: 32,
+  borderRadius: 18,
+  border: "1px solid #e2e8f0",
+  boxShadow: "0 6px 18px rgba(0,0,0,0.04)",
+};
+
+const sectionTitle = {
+  fontSize: 22,
+  fontWeight: 700,
+  marginBottom: 22,
+};
+
+const subTitle = {
+  marginTop: 20,
+  marginBottom: 12,
+  color: "#0f172a",
+  fontWeight: 600,
+};
+
+const input = {
+  width: "100%",
+  padding: 14,
+  marginBottom: 16,
+  borderRadius: 12,
+  border: "1px solid #e2e8f0",
+  fontSize: 15,
+};
+
+const row = {
+  display: "flex",
+  gap: 14,
+  marginBottom: 10,
+};
+
+const statusBox = {
+  marginTop: 18,
+  textAlign: "center",
+  minHeight: 28,
+};
+
+const statusText = {
+  margin: 0,
+  fontWeight: 600,
+};
+
+const emptyState = {
+  textAlign: "center",
+  color: "#64748b",
+  padding: 30,
+};

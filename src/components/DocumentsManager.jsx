@@ -1,6 +1,19 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabase/supabaseClient";
 import { useImmo } from "../context/ImmoContext";
+import UploadDocumentModal from "../components/UploadDocumentModal";
+import {
+  UploadCloud,
+  Menu,
+  Star,
+  FileText,
+  Shield,
+  FilePlus2,
+  AlertTriangle,
+  Banknote,
+  Settings,
+  Home
+} from "lucide-react";
 
 export default function DocumentsManager() {
   const { houses } = useImmo();
@@ -9,10 +22,15 @@ export default function DocumentsManager() {
   const [selectedHouse, setSelectedHouse] = useState("");
   const [selectedApartment, setSelectedApartment] = useState("");
   const [selectedType, setSelectedType] = useState("");
+  const [search, setSearch] = useState("");
+  const [sidebarView, setSidebarView] = useState("all");
   const [loading, setLoading] = useState(true);
 
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
   // =========================
-  // LOAD DOCUMENTS
+  // LOAD
   // =========================
   const loadDocuments = async () => {
     setLoading(true);
@@ -37,7 +55,7 @@ export default function DocumentsManager() {
   }, []);
 
   // =========================
-  // DELETE DOCUMENT
+  // DELETE
   // =========================
   const deleteDocument = async (doc) => {
     const ok = confirm("Dokument wirklich löschen?");
@@ -57,256 +75,411 @@ export default function DocumentsManager() {
   };
 
   // =========================
+  // FAVORITE
+  // =========================
+  const toggleFavorite = async (doc) => {
+    const { error } = await supabase
+      .from("documents")
+      .update({ is_favorite: !doc.is_favorite })
+      .eq("id", doc.id);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setDocuments((prev) =>
+      prev.map((d) =>
+        d.id === doc.id ? { ...d, is_favorite: !d.is_favorite } : d
+      )
+    );
+  };
+
+  // =========================
   // HELPERS
   // =========================
   const getHouse = (id) => houses.find((h) => h.id === id);
 
-  const getApartment = (houseId, aptId) => {
-    const house = houses.find((h) => h.id === houseId);
-    return house?.apartments?.find((a) => a.id === aptId);
+  const getFileType = (doc) => {
+    const mime = doc.mime_type || "";
+    const url = doc.file_url || "";
+
+    if (mime.startsWith("image/") || url.match(/\.(jpg|jpeg|png|webp)$/i)) return "image";
+    if (mime.includes("pdf") || url.match(/\.pdf$/i)) return "pdf";
+    if (mime.includes("word") || url.match(/\.(doc|docx)$/i)) return "word";
+    if (mime.includes("sheet") || url.match(/\.(xls|xlsx)$/i)) return "excel";
+    return "other";
   };
+
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 900;
 
   // =========================
   // FILTERS
   // =========================
   const filteredDocs = documents.filter((doc) => {
+    const house = getHouse(doc.house_id);
+
     const houseMatch = selectedHouse ? doc.house_id === selectedHouse : true;
     const aptMatch = selectedApartment ? doc.apartment_id === selectedApartment : true;
     const typeMatch = selectedType ? doc.type === selectedType : true;
 
-    return houseMatch && aptMatch && typeMatch;
+    const searchMatch = search
+      ? (
+          doc.file_name?.toLowerCase().includes(search.toLowerCase()) ||
+          doc.title?.toLowerCase().includes(search.toLowerCase()) ||
+          doc.type?.toLowerCase().includes(search.toLowerCase()) ||
+          doc.ocr_text?.toLowerCase().includes(search.toLowerCase()) ||
+          house?.name?.toLowerCase().includes(search.toLowerCase())
+        )
+      : true;
+
+    const sidebarMatch =
+      sidebarView === "all"
+        ? true
+        : sidebarView === "favorites"
+        ? doc.is_favorite
+        : doc.type === sidebarView;
+
+    return houseMatch && aptMatch && typeMatch && searchMatch && sidebarMatch;
   });
 
-  // Apartments dynamisch je Haus
-  const apartmentsOfSelectedHouse =
-    houses.find((h) => h.id === selectedHouse)?.apartments || [];
+  // =========================
+  // TYPES
+  // =========================
+  const types = [
+    "rechnung",
+    "vertrag",
+    "versicherung",
+    "reparatur",
+    "nebenkostenabrechnung",
+    "mahnung",
+    "steuerrelevant",
+    "sonstiges"
+  ];
 
   return (
-    <div style={{ padding: "20px 15px", maxWidth: "1280px", margin: "0 auto" }}>
+    <>
+      {/* MOBILE HEADER BAR */}
+      {isMobile && (
+        <div style={mobileTopBar}>
+          <button onClick={() => setMobileSidebarOpen(true)} style={menuBtn}>
+            <Menu />
+          </button>
 
-      {/* HEADER */}
-      <div style={{
-        background: "white",
-        padding: "28px 32px",
-        borderRadius: "20px",
-        boxShadow: "0 8px 30px rgba(0,0,0,0.1)",
-        marginBottom: "32px",
-        display: "flex",
-        alignItems: "center",
-        gap: "18px"
-      }}>
-        <div style={{
-          width: "62px",
-          height: "62px",
-          background: "linear-gradient(135deg, #0A2540, #00D4C8)",
-          color: "white",
-          borderRadius: "50%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "32px"
-        }}>
-          📂
+          <h2 style={{ margin: 0, fontSize: 18 }}>Dokumente</h2>
+
+          <button onClick={() => setUploadOpen(true)} style={uploadFabSmall}>
+            <UploadCloud size={18} />
+          </button>
         </div>
+      )}
 
-        <div>
-          <h1 style={{ margin: 0, fontSize: "32px", color: "#0A2540" }}>
-            Dokumente verwalten
-          </h1>
-          <p style={{ margin: 0, color: "#666", fontSize: "18px" }}>
-            Haus- & Wohnungsdokumente strukturiert organisieren
-          </p>
-        </div>
-      </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : "260px 1fr",
+          gap: "24px",
+          padding: "28px",
+          maxWidth: "1450px",
+          margin: "0 auto",
+        }}
+      >
 
-      {/* FILTER */}
-      <div style={{
-        background: "white",
-        padding: "25px",
-        borderRadius: "20px",
-        boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
-        marginBottom: "25px",
-        display: "flex",
-        gap: "15px",
-        flexWrap: "wrap"
-      }}>
+        {/* =========================
+            SIDEBAR (DESKTOP)
+        ========================= */}
+        {!isMobile && (
+          <div style={sidebar}>
+            <h3 style={{ marginTop: 0, color: "#0A2540" }}>Dokumente</h3>
 
-        {/* HOUSE */}
-        <select
-          value={selectedHouse}
-          onChange={(e) => {
-            setSelectedHouse(e.target.value);
-            setSelectedApartment("");
-          }}
-          style={{
-            padding: "14px",
-            borderRadius: "12px",
-            border: "1px solid #e0e0e0",
-            flex: 1,
-            minWidth: "200px"
-          }}
-        >
-          <option value="">Alle Häuser</option>
-          {houses.map((h) => (
-            <option key={h.id} value={h.id}>
-              {h.name}
-            </option>
-          ))}
-        </select>
+            <SidebarButton active={sidebarView === "all"} onClick={() => setSidebarView("all")}>
+              <FileText size={16} /> Alle
+            </SidebarButton>
 
-        {/* APARTMENT */}
-        <select
-          value={selectedApartment}
-          onChange={(e) => setSelectedApartment(e.target.value)}
-          style={{
-            padding: "14px",
-            borderRadius: "12px",
-            border: "1px solid #e0e0e0",
-            flex: 1,
-            minWidth: "200px"
-          }}
-        >
-          <option value="">Alle Wohnungen</option>
-          {apartmentsOfSelectedHouse.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.name}
-            </option>
-          ))}
-        </select>
+            <SidebarButton active={sidebarView === "favorites"} onClick={() => setSidebarView("favorites")}>
+              <Star size={16} /> Favoriten
+            </SidebarButton>
 
-        {/* TYPE */}
-        <select
-          value={selectedType}
-          onChange={(e) => setSelectedType(e.target.value)}
-          style={{
-            padding: "14px",
-            borderRadius: "12px",
-            border: "1px solid #e0e0e0",
-            flex: 1,
-            minWidth: "200px"
-          }}
-        >
-          <option value="">Alle Typen</option>
-          <option value="sonstiges">Sonstiges</option>
-          <option value="rechnung">Rechnung</option>
-          <option value="versicherung">Versicherung</option>
-          <option value="reparatur">Reparatur</option>
-          <option value="vertrag">Vertrag</option>
-        </select>
+            <div style={divider} />
 
-      </div>
+            {types.map((t) => (
+              <SidebarButton
+                key={t}
+                active={sidebarView === t}
+                onClick={() => setSidebarView(t)}
+              >
+                <FilePlus2 size={16} /> {t}
+              </SidebarButton>
+            ))}
 
-      {/* CONTENT */}
-      <div style={{
-        background: "white",
-        padding: "25px",
-        borderRadius: "20px",
-        boxShadow: "0 8px 30px rgba(0,0,0,0.08)"
-      }}>
+            <div style={divider} />
 
-        {loading ? (
-          <p>Lade Dokumente...</p>
-        ) : filteredDocs.length === 0 ? (
-          <p style={{ color: "#666" }}>Keine Dokumente gefunden</p>
-        ) : (
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-            gap: "15px"
-          }}>
-            {filteredDocs.map((doc) => {
-              const house = getHouse(doc.house_id);
-              const apartment = getApartment(doc.house_id, doc.apartment_id);
-
-              return (
-                <div
-                  key={doc.id}
-                  style={{
-                    border: "1px solid #eee",
-                    borderRadius: "16px",
-                    padding: "15px",
-                    background: "#fafafa",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "10px"
-                  }}
-                >
-
-                  {/* IMAGE */}
-                  <img
-                    src={doc.file_url}
-                    alt="Dokument"
-                    style={{
-                      width: "100%",
-                      height: "180px",
-                      objectFit: "cover",
-                      borderRadius: "12px"
-                    }}
-                  />
-
-                  {/* INFO */}
-                  <div>
-                    <p style={{ margin: 0, fontWeight: "600" }}>
-                      🏠 {house?.name || "Unbekannt"}
-                    </p>
-
-                    {apartment && (
-                      <p style={{ margin: 0, color: "#666", fontSize: "13px" }}>
-                        🏢 {apartment.name}
-                      </p>
-                    )}
-
-                    <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>
-                      Typ: {doc.type}
-                    </p>
-
-                    <p style={{ margin: 0, color: "#999", fontSize: "12px" }}>
-                      {new Date(doc.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-
-                  {/* ACTIONS */}
-                  <div style={{ display: "flex", gap: "10px" }}>
-                    <a
-                      href={doc.file_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        flex: 1,
-                        textAlign: "center",
-                        padding: "10px",
-                        background: "#0A2540",
-                        color: "white",
-                        borderRadius: "10px",
-                        textDecoration: "none",
-                        fontSize: "14px"
-                      }}
-                    >
-                      Öffnen
-                    </a>
-
-                    <button
-                      onClick={() => deleteDocument(doc)}
-                      style={{
-                        flex: 1,
-                        padding: "10px",
-                        background: "#ff4d4f",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "10px",
-                        fontSize: "14px"
-                      }}
-                    >
-                      Löschen
-                    </button>
-                  </div>
-
-                </div>
-              );
-            })}
+            {houses.map((h) => (
+              <div
+                key={h.id}
+                onClick={() => setSelectedHouse(h.id)}
+                style={{
+                  padding: 10,
+                  borderRadius: 12,
+                  cursor: "pointer",
+                  background: selectedHouse === h.id ? "#eef6ff" : "transparent",
+                  display: "flex",
+                  gap: 8,
+                  alignItems: "center"
+                }}
+              >
+                <Home size={16} />
+                {h.name}
+              </div>
+            ))}
           </div>
         )}
+
+        {/* =========================
+            MAIN
+        ========================= */}
+        <div>
+
+          {/* HEADER */}
+          <div style={{ textAlign: "center", marginBottom: 24 }}>
+            <UploadCloud size={34} />
+            <h1 style={{ margin: 0, fontSize: 32, fontWeight: 800, color: "#0A2540" }}>
+              Dokumente
+            </h1>
+            <p style={{ color: "#64748b" }}>
+              Alle Dokumente verwalten, filtern und durchsuchen
+            </p>
+          </div>
+
+          <input
+            placeholder="Suche..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={searchInput}
+          />
+
+          {loading ? (
+            <p>Lade...</p>
+          ) : filteredDocs.length === 0 ? (
+            <p>Keine Dokumente</p>
+          ) : (
+            <div style={grid}>
+              {filteredDocs.map((doc) => {
+                const house = getHouse(doc.house_id);
+                const fileType = getFileType(doc);
+
+                return (
+                  <div key={doc.id} style={card}>
+                    {fileType === "image" ? (
+                      <img src={doc.file_url} style={img} />
+                    ) : (
+                      <div style={placeholder}>
+                        <FileText size={40} />
+                      </div>
+                    )}
+
+                    <b>{doc.file_name}</b>
+                    <p style={{ fontSize: 12, color: "#666" }}>{house?.name}</p>
+
+                    <div style={btnRow}>
+                      <a href={doc.file_url} target="_blank" style={btn}>Öffnen</a>
+                      <button onClick={() => deleteDocument(doc)} style={btnDanger}>Löschen</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* FLOAT BUTTON */}
+      <button onClick={() => setUploadOpen(true)} style={fab}>
+        <UploadCloud />
+      </button>
+
+      <UploadDocumentModal
+        open={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        onUploaded={loadDocuments}
+      />
+
+      {/* =========================
+          MOBILE SIDEBAR DRAWER
+      ========================= */}
+      {isMobile && mobileSidebarOpen && (
+        <div style={overlay} onClick={() => setMobileSidebarOpen(false)}>
+          <div style={mobileSidebar} onClick={(e) => e.stopPropagation()}>
+            <h3>Filter</h3>
+
+            <SidebarButton active={sidebarView === "all"} onClick={() => setSidebarView("all")}>
+              <FileText size={16} /> Alle
+            </SidebarButton>
+
+            <SidebarButton active={sidebarView === "favorites"} onClick={() => setSidebarView("favorites")}>
+              <Star size={16} /> Favoriten
+            </SidebarButton>
+
+            <div style={divider} />
+
+            {types.map((t) => (
+              <SidebarButton key={t} active={sidebarView === t} onClick={() => setSidebarView(t)}>
+                <Settings size={16} /> {t}
+              </SidebarButton>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
+
+// =========================
+// UI COMPONENTS
+// =========================
+function SidebarButton({ children, active, onClick }) {
+  return (
+    <button onClick={onClick} style={{
+      width: "100%",
+      textAlign: "left",
+      padding: 10,
+      borderRadius: 12,
+      border: "none",
+      marginBottom: 6,
+      background: active ? "#0A2540" : "transparent",
+      color: active ? "white" : "#0A2540",
+      display: "flex",
+      gap: 8,
+      alignItems: "center",
+      cursor: "pointer"
+    }}>
+      {children}
+    </button>
+  );
+}
+
+// =========================
+// STYLES
+// =========================
+const sidebar = {
+  background: "white",
+  borderRadius: 22,
+  padding: 22,
+  border: "1px solid #edf0f2",
+  boxShadow: "0 8px 24px rgba(0,0,0,0.05)",
+};
+
+const divider = {
+  height: 1,
+  background: "#eee",
+  margin: "14px 0",
+};
+
+const searchInput = {
+  width: "100%",
+  padding: 12,
+  borderRadius: 12,
+  border: "1px solid #ddd",
+  marginBottom: 16,
+};
+
+const grid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))",
+  gap: 16,
+};
+
+const card = {
+  background: "white",
+  borderRadius: 16,
+  padding: 12,
+};
+
+const img = {
+  width: "100%",
+  height: 160,
+  objectFit: "cover",
+  borderRadius: 12,
+  display: "block"
+};
+
+const placeholder = {
+  height: 160,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center"
+};
+
+const btnRow = {
+  display: "flex",
+  gap: 8,
+  marginTop: 10,
+};
+
+const btn = {
+  flex: 1,
+  padding: 8,
+  textAlign: "center",
+  borderRadius: 10,
+  background: "#0A2540",
+  color: "white",
+  textDecoration: "none",
+};
+
+const btnDanger = {
+  flex: 1,
+  padding: 8,
+  borderRadius: 10,
+  background: "#ef4444",
+  color: "white",
+  border: "none",
+};
+
+const fab = {
+  position: "fixed",
+  bottom: 24,
+  right: 24,
+  width: 64,
+  height: 64,
+  borderRadius: "50%",
+  background: "#0A2540",
+  color: "white",
+  border: "none",
+};
+
+const overlay = {
+  position: "fixed",
+  inset: 0,
+  background: "rgba(0,0,0,0.4)",
+  display: "flex",
+};
+
+const mobileSidebar = {
+  width: 280,
+  background: "white",
+  height: "100%",
+  padding: 16,
+};
+
+const mobileTopBar = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  padding: 12,
+  background: "white",
+  borderBottom: "1px solid #eee",
+};
+
+const menuBtn = {
+  background: "none",
+  border: "none",
+};
+
+const uploadFabSmall = {
+  background: "#0A2540",
+  color: "white",
+  border: "none",
+  borderRadius: 10,
+  width: 36,
+  height: 36,
+};

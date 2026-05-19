@@ -1,5 +1,15 @@
 import { useState, useEffect } from "react";
 import { useImmo } from "../context/ImmoContext";
+import {
+  Calendar,
+  Home,
+  Building2,
+  Clock,
+  Edit,
+  Trash2,
+  Plus,
+  Save
+} from "lucide-react";
 
 export default function Appointments() {
   const { houses, appointments, setAppointments } = useImmo();
@@ -11,7 +21,6 @@ export default function Appointments() {
   const [description, setDescription] = useState("");
   const [editingId, setEditingId] = useState(null);
 
-  // Haus sicher finden
   const selectedHouse = houses.find(
     (h) => String(h.id) === String(houseId)
   );
@@ -20,6 +29,9 @@ export default function Appointments() {
     setApartmentId("");
   }, [houseId]);
 
+  // =========================
+  // ADD / UPDATE
+  // =========================
   const addOrUpdateAppointment = async () => {
     if (!houseId || !date || !description) {
       alert("Bitte Haus, Datum und Beschreibung ausfüllen!");
@@ -29,9 +41,7 @@ export default function Appointments() {
     const newAppointment = {
       id: editingId || crypto.randomUUID(),
       house_id: String(houseId),
-      apartment_id: apartmentId
-        ? String(apartmentId)
-        : null,
+      apartment_id: apartmentId ? String(apartmentId) : null,
       date,
       time: time || "00:00",
       description,
@@ -40,21 +50,14 @@ export default function Appointments() {
     if (editingId) {
       await setAppointments(
         appointments.map((a) =>
-          String(a.id) === String(editingId)
-            ? newAppointment
-            : a
+          String(a.id) === String(editingId) ? newAppointment : a
         )
       );
-
       setEditingId(null);
     } else {
-      await setAppointments([
-        newAppointment,
-        ...appointments,
-      ]);
+      await setAppointments([newAppointment, ...appointments]);
     }
 
-    // Reset
     setHouseId("");
     setApartmentId("");
     setDate("");
@@ -64,344 +67,306 @@ export default function Appointments() {
 
   const startEdit = (appointment) => {
     const house = houses.find(
-      (h) =>
-        String(h.id) ===
-        String(appointment.house_id)
+      (h) => String(h.id) === String(appointment.house_id)
     );
 
     setHouseId(house ? house.id : "");
-    setApartmentId(
-      appointment.apartment_id || ""
-    );
+    setApartmentId(appointment.apartment_id || "");
     setDate(appointment.date);
     setTime(appointment.time || "");
-    setDescription(
-      appointment.description || ""
-    );
+    setDescription(appointment.description || "");
     setEditingId(appointment.id);
   };
 
   const deleteAppointment = async (id) => {
-    if (!window.confirm("Termin wirklich löschen?")) {
-      return;
-    }
+    if (!window.confirm("Termin wirklich löschen?")) return;
 
     await setAppointments(
-      appointments.filter(
-        (a) => String(a.id) !== String(id)
-      )
+      appointments.filter((a) => String(a.id) !== String(id))
     );
   };
 
   return (
-    <div>
-      <h2
-        style={{
-          marginBottom: "25px",
-          color: "#0A2540",
-          fontSize: "28px",
-        }}
-      >
-        📅 Termine & Besichtigungen
-      </h2>
+    <div style={page}>
+      <div style={container}>
 
-      {/* Formular */}
-      <div
-        style={{
-          background: "white",
-          padding: "32px",
-          borderRadius: "20px",
-          boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
-          marginBottom: "40px",
-        }}
-      >
-        <h3
-          style={{
-            marginTop: 0,
-            marginBottom: "20px",
-            color: "#0A2540",
-          }}
-        >
-          Termin eintragen
-        </h3>
+        {/* =========================
+            HEADER (UNIFIED SAAS STYLE)
+        ========================= */}
+        <div style={header}>
+          <div style={headerIcon}>
+            <Calendar size={30} />
+          </div>
 
-        {/* Haus */}
-        <select
-          value={houseId}
-          onChange={(e) =>
-            setHouseId(e.target.value)
-          }
-          style={{
-            width: "100%",
-            padding: "16px",
-            marginBottom: "16px",
-            borderRadius: "14px",
-            border: "1px solid #e2e8f0",
-            fontSize: "16px",
-            background: "#f8fafc",
-          }}
-        >
-          <option value="">
-            Haus auswählen...
-          </option>
+          <h1 style={title}>Termine & Besichtigungen</h1>
+          <p style={subtitle}>Alle Termine sauber organisiert im Überblick</p>
+        </div>
 
-          {houses.map((house) => (
-            <option
-              key={house.id}
-              value={house.id}
-            >
-              {house.name}
-            </option>
-          ))}
-        </select>
+        {/* FORM CARD */}
+        <div style={card}>
+          <h3 style={cardTitle}>
+            <Plus size={18} />
+            Neuen Termin erstellen
+          </h3>
 
-        {/* Wohnung */}
-        {selectedHouse &&
-          selectedHouse.apartments &&
-          selectedHouse.apartments.length >
-            0 && (
+          <select
+            value={houseId}
+            onChange={(e) => setHouseId(e.target.value)}
+            style={input}
+          >
+            <option value="">Haus auswählen...</option>
+            {houses.map((house) => (
+              <option key={house.id} value={house.id}>
+                {house.name}
+              </option>
+            ))}
+          </select>
+
+          {selectedHouse?.apartments?.length > 0 && (
             <select
               value={apartmentId}
-              onChange={(e) =>
-                setApartmentId(e.target.value)
-              }
-              style={{
-                width: "100%",
-                padding: "16px",
-                marginBottom: "24px",
-                borderRadius: "14px",
-                border: "1px solid #e2e8f0",
-                fontSize: "16px",
-                background: "#f8fafc",
-              }}
+              onChange={(e) => setApartmentId(e.target.value)}
+              style={input}
             >
-              <option value="">
-                Wohnung auswählen...
-              </option>
-
-              {selectedHouse.apartments.map(
-                (apt) => (
-                  <option
-                    key={apt.id}
-                    value={apt.id}
-                  >
-                    {apt.name} – {apt.tenant}
-                  </option>
-                )
-              )}
+              <option value="">Wohnung auswählen...</option>
+              {selectedHouse.apartments.map((apt) => (
+                <option key={apt.id} value={apt.id}>
+                  {apt.name} – {apt.tenant}
+                </option>
+              ))}
             </select>
           )}
 
-        {/* Datum + Uhrzeit */}
-        <div
-          style={{
-            display: "flex",
-            gap: "16px",
-            marginBottom: "24px",
-          }}
-        >
-          <input
-            type="date"
-            value={date}
-            onChange={(e) =>
-              setDate(e.target.value)
-            }
-            style={{
-              flex: 1,
-              padding: "16px",
-              borderRadius: "14px",
-              border: "1px solid #e2e8f0",
-              fontSize: "16px",
-            }}
+          <div style={row}>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              style={input}
+            />
+
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              style={input}
+            />
+          </div>
+
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Beschreibung des Termins..."
+            style={textarea}
           />
 
-          <input
-            type="time"
-            value={time}
-            onChange={(e) =>
-              setTime(e.target.value)
-            }
-            style={{
-              flex: 1,
-              padding: "16px",
-              borderRadius: "14px",
-              border: "1px solid #e2e8f0",
-              fontSize: "16px",
-            }}
-          />
+          <button onClick={addOrUpdateAppointment} style={primaryBtn}>
+            <Save size={18} />
+            {editingId ? "Termin aktualisieren" : "Termin speichern"}
+          </button>
         </div>
 
-        {/* Beschreibung */}
-        <textarea
-          value={description}
-          onChange={(e) =>
-            setDescription(e.target.value)
-          }
-          placeholder="Beschreibung..."
-          style={{
-            width: "100%",
-            height: "120px",
-            padding: "16px",
-            borderRadius: "14px",
-            border: "1px solid #e2e8f0",
-            fontSize: "16px",
-            resize: "vertical",
-          }}
-        />
+        {/* LIST HEADER */}
+        <h3 style={listTitle}>
+          Alle Termine ({appointments.length})
+        </h3>
 
-        <button
-          onClick={addOrUpdateAppointment}
-          style={{
-            marginTop: "20px",
-            padding: "16px 32px",
-            background: "#0A2540",
-            color: "white",
-            border: "none",
-            borderRadius: "14px",
-            width: "100%",
-            fontSize: "17px",
-            fontWeight: "600",
-            cursor: "pointer",
-          }}
-        >
-          {editingId
-            ? "Termin aktualisieren"
-            : "Termin speichern"}
-        </button>
-      </div>
-
-      {/* Liste */}
-      <h3
-        style={{
-          marginBottom: "20px",
-          color: "#0A2540",
-        }}
-      >
-        Alle Termine ({appointments.length})
-      </h3>
-
-      {appointments.length === 0 ? (
-        <p
-          style={{
-            color: "#666",
-            textAlign: "center",
-            padding: "40px 0",
-          }}
-        >
-          Noch keine Termine vorhanden.
-        </p>
-      ) : (
-        appointments
-          .sort(
-            (a, b) =>
-              new Date(a.date) -
-              new Date(b.date)
-          )
-          .map((appointment) => (
-            <div
-              key={appointment.id}
-              style={{
-                background: "white",
-                padding: "24px",
-                marginBottom: "16px",
-                borderRadius: "18px",
-                boxShadow:
-                  "0 6px 20px rgba(0,0,0,0.08)",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent:
-                    "space-between",
-                  alignItems: "flex-start",
-                }}
-              >
+        {/* LIST */}
+        {appointments.length === 0 ? (
+          <p style={empty}>Noch keine Termine vorhanden.</p>
+        ) : (
+          appointments
+            .sort((a, b) => new Date(a.date) - new Date(b.date))
+            .map((appointment) => (
+              <div key={appointment.id} style={appointmentCard}>
                 <div>
-                  <strong
-                    style={{
-                      fontSize: "18px",
-                    }}
-                  >
+                  <strong style={{ fontSize: 18 }}>
                     {appointment.date}
-
-                    {appointment.time &&
-                      appointment.time !==
-                        "00:00" &&
-                      ` • ${appointment.time}`}
+                    {appointment.time && appointment.time !== "00:00" && ` • ${appointment.time}`}
                   </strong>
 
-                  <br />
+                  <div style={meta}>
+                    {houses.find((h) => String(h.id) === String(appointment.house_id))?.name || "—"}
+                  </div>
 
-                  <span
-                    style={{
-                      color: "#555",
-                    }}
-                  >
-                    {houses.find(
-                      (h) =>
-                        String(h.id) ===
-                        String(
-                          appointment.house_id
-                        )
-                    )?.name || "—"}
-                  </span>
-
-                  <p
-                    style={{
-                      margin: "12px 0 0",
-                      color: "#333",
-                    }}
-                  >
-                    {
-                      appointment.description
-                    }
-                  </p>
+                  <p style={desc}>{appointment.description}</p>
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "8px",
-                  }}
-                >
-                  <button
-                    onClick={() =>
-                      startEdit(appointment)
-                    }
-                    style={{
-                      padding: "8px 16px",
-                      background: "#f1f5f9",
-                      border: "none",
-                      borderRadius: "10px",
-                      fontSize: "15px",
-                    }}
-                  >
-                    Bearbeiten
+                <div style={actions}>
+                  <button onClick={() => startEdit(appointment)} style={iconBtn}>
+                    <Edit size={18} />
                   </button>
 
-                  <button
-                    onClick={() =>
-                      deleteAppointment(
-                        appointment.id
-                      )
-                    }
-                    style={{
-                      padding: "8px 16px",
-                      background: "#fee2e2",
-                      color: "#ef4444",
-                      border: "none",
-                      borderRadius: "10px",
-                      fontSize: "15px",
-                    }}
-                  >
-                    Löschen
+                  <button onClick={() => deleteAppointment(appointment.id)} style={iconBtnDanger}>
+                    <Trash2 size={18} />
                   </button>
                 </div>
               </div>
-            </div>
-          ))
-      )}
+            ))
+        )}
+      </div>
     </div>
   );
 }
+
+/* =========================
+   SAAS STYLE (UNIFIED)
+========================= */
+
+const page = {
+  minHeight: "100vh",
+  padding: 24,
+  background: "#f6f7fb",
+  fontFamily: "Inter, Arial",
+  color: "#0f172a",
+};
+
+const container = {
+  maxWidth: 1100,
+  margin: "0 auto",
+};
+
+/* HEADER */
+const header = {
+  textAlign: "center",
+  marginBottom: 32,
+};
+
+const headerIcon = {
+  width: 64,
+  height: 64,
+  margin: "0 auto 12px",
+  borderRadius: 16,
+  background: "#f1f5f9",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxShadow: "0 6px 18px rgba(0,0,0,0.05)",
+};
+
+const title = {
+  fontSize: 32,
+  fontWeight: 800,
+  margin: 0,
+};
+
+const subtitle = {
+  color: "#64748b",
+  marginTop: 6,
+};
+
+/* CARD */
+const card = {
+  background: "white",
+  padding: 28,
+  borderRadius: 18,
+  border: "1px solid #e2e8f0",
+  boxShadow: "0 6px 18px rgba(0,0,0,0.04)",
+  marginBottom: 28,
+};
+
+const cardTitle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  marginBottom: 18,
+  fontSize: 18,
+  fontWeight: 700,
+};
+
+/* FORM */
+const input = {
+  width: "100%",
+  padding: 14,
+  marginBottom: 14,
+  borderRadius: 12,
+  border: "1px solid #e2e8f0",
+  fontSize: 15,
+  background: "white",
+};
+
+const textarea = {
+  width: "100%",
+  height: 120,
+  padding: 14,
+  borderRadius: 12,
+  border: "1px solid #e2e8f0",
+  fontSize: 15,
+  marginBottom: 16,
+  resize: "vertical",
+};
+
+const row = {
+  display: "flex",
+  gap: 12,
+};
+
+/* BUTTON */
+const primaryBtn = {
+  width: "100%",
+  padding: 14,
+  borderRadius: 12,
+  border: "none",
+  background: "#0A2540",
+  color: "white",
+  fontWeight: 600,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 8,
+  cursor: "pointer",
+};
+
+/* LIST */
+const listTitle = {
+  marginBottom: 16,
+  fontSize: 18,
+  fontWeight: 700,
+};
+
+const empty = {
+  textAlign: "center",
+  color: "#64748b",
+  padding: 60,
+};
+
+const appointmentCard = {
+  background: "white",
+  padding: 22,
+  borderRadius: 16,
+  border: "1px solid #e2e8f0",
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  marginBottom: 12,
+};
+
+const meta = {
+  color: "#64748b",
+  marginTop: 6,
+};
+
+const desc = {
+  marginTop: 10,
+  color: "#0f172a",
+};
+
+const actions = {
+  display: "flex",
+  gap: 8,
+};
+
+const iconBtn = {
+  padding: 8,
+  borderRadius: 10,
+  border: "1px solid #e2e8f0",
+  background: "#f8fafc",
+  cursor: "pointer",
+};
+
+const iconBtnDanger = {
+  ...iconBtn,
+  background: "#fff1f2",
+  border: "1px solid #fecdd3",
+  color: "#ef4444",
+};

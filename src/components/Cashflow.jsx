@@ -1,5 +1,11 @@
 import { useState } from "react";
 import { useImmo } from "../context/ImmoContext";
+import {
+  TrendingUp,
+  Banknote,
+  ArrowUpRight,
+  ArrowDownRight,
+} from "lucide-react";
 
 export default function Cashflow() {
   const { houses, transactions } = useImmo();
@@ -51,174 +57,212 @@ export default function Cashflow() {
     manualExpense;
 
   return (
-    <div style={{ padding: "20px 15px", maxWidth: "1280px", margin: "0 auto" }}>
-
-      {/* HEADER */}
-      <div style={{
-        background: "white",
-        padding: "28px 32px",
-        borderRadius: "20px",
-        boxShadow: "0 8px 30px rgba(0,0,0,0.1)",
-        marginBottom: "32px",
-        display: "flex",
-        alignItems: "center",
-        gap: "18px"
-      }}>
-        <div style={{
-          width: "62px",
-          height: "62px",
-          background: "linear-gradient(135deg, #0A2540, #00D4C8)",
-          color: "white",
-          borderRadius: "50%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "32px",
-          boxShadow: "0 4px 15px rgba(0,212,200,0.3)"
-        }}>📈</div>
-
-        <div>
-          <h1 style={{ margin: 0, fontSize: "32px", color: "#0A2540" }}>
-            Cashflow
-          </h1>
-          <p style={{ margin: 0, color: "#666", fontSize: "18px" }}>
-            Realistische Vermieter-Übersicht
-          </p>
-        </div>
-      </div>
-
-      {/* KPI CARDS */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-        gap: "24px",
-        marginBottom: "40px"
-      }}>
-
-        <div style={{ background: "white", padding: "32px 24px", borderRadius: "20px", boxShadow: "0 8px 30px rgba(0,0,0,0.08)", textAlign: "center" }}>
-          <div style={{ fontSize: "52px", marginBottom: "20px", color: "#00D4C8" }}>💰</div>
-          <h1 style={{ fontSize: "48px", margin: "0 0 8px", color: "#00D4C8", fontWeight: "700" }}>
-            {incomeWarmmiete.toFixed(0)} €
-          </h1>
-          <p style={{ color: "#555", fontSize: "18px", fontWeight: "600" }}>Warmmiete (Brutto)</p>
+    <div style={page}>
+      <div style={container}>
+        {/* HEADER */}
+        <div style={header}>
+          <h1 style={title}>Cashflow</h1>
+          <p style={subtitle}>Realistische Vermieter-Übersicht</p>
         </div>
 
-        <div style={{ background: "white", padding: "32px 24px", borderRadius: "20px", boxShadow: "0 8px 30px rgba(0,0,0,0.08)", textAlign: "center" }}>
-          <div style={{ fontSize: "52px", marginBottom: "20px", color: "#1e88e5" }}>🏦</div>
-          <h1 style={{ fontSize: "48px", margin: "0 0 8px", color: "#1e88e5", fontWeight: "700" }}>
-            {incomeKaltmiete.toFixed(0)} €
-          </h1>
-          <p style={{ color: "#555", fontSize: "18px", fontWeight: "600" }}>Kaltmiete (verfügbar)</p>
-        </div>
-
-        <div style={{ background: "white", padding: "32px 24px", borderRadius: "20px", boxShadow: "0 8px 30px rgba(0,0,0,0.08)", textAlign: "center" }}>
-          <div style={{ fontSize: "52px", marginBottom: "20px", color: "#dc3545" }}>📤</div>
-          <h1 style={{ fontSize: "48px", margin: "0 0 8px", color: "#dc3545", fontWeight: "700" }}>
-            {(expenseLoan + totalRealCosts + manualExpense).toFixed(0)} €
-          </h1>
-          <p style={{ color: "#555", fontSize: "18px", fontWeight: "600" }}>Gesamtausgaben</p>
-        </div>
-
-        <div style={{ background: "white", padding: "32px 24px", borderRadius: "20px", boxShadow: "0 8px 30px rgba(0,0,0,0.08)", textAlign: "center" }}>
-          <div style={{ fontSize: "52px", marginBottom: "20px" }}>📊</div>
-          <h1 style={{
-            fontSize: "48px",
-            margin: "0 0 8px",
-            color: cashflow >= 0 ? "#28a745" : "#dc3545",
-            fontWeight: "700"
-          }}>
-            {cashflow.toFixed(0)} €
-          </h1>
-          <p style={{ color: "#555", fontSize: "18px", fontWeight: "600" }}>Netto Cashflow</p>
-        </div>
-      </div>
-
-      {/* Details Button */}
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: "30px" }}>
-        <button
-          onClick={() => setShowDetails(!showDetails)}
-          style={{
-            padding: "14px 32px",
-            background: "#0A2540",
-            color: "white",
-            border: "none",
-            borderRadius: "12px",
-            fontSize: "16px",
-            fontWeight: "600",
-            boxShadow: "0 6px 20px rgba(10, 37, 64, 0.25)"
-          }}
-        >
-          {showDetails ? "Details ausblenden" : "Cashflow Details anzeigen"}
-        </button>
-      </div>
-
-      {/* ====================== NEUE DETAIL-TABELLE ====================== */}
-      {showDetails && (
-        <div style={{
-          background: "white",
-          padding: "35px",
-          borderRadius: "20px",
-          boxShadow: "0 8px 30px rgba(0,0,0,0.08)"
-        }}>
-          <h3 style={{ marginBottom: "25px", color: "#0A2540" }}>Cashflow Aufschlüsselung</h3>
-
-          {/* Einnahmen */}
-          <div style={{ marginBottom: "25px" }}>
-            <div style={{ fontWeight: "700", color: "#28a745", fontSize: "18px", marginBottom: "12px" }}>EINNAHMEN</div>
-            
-            <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #eee" }}>
-              <span>Warmmiete (Brutto)</span>
-              <span style={{ color: "#28a745", fontWeight: "600" }}>{incomeWarmmiete.toFixed(2)} €</span>
+        {/* KPI CARDS */}
+        <div style={grid}>
+          <div style={card}>
+            <div style={iconBox}>
+              <TrendingUp size={28} />
             </div>
-            
-            <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #eee" }}>
-              <span>Kaltmiete (verfügbar)</span>
-              <span style={{ color: "#28a745", fontWeight: "600" }}>{incomeKaltmiete.toFixed(2)} €</span>
-            </div>
-            
-            <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #eee" }}>
-              <span>Manuelle Einnahmen</span>
-              <span style={{ color: "#28a745", fontWeight: "600" }}>{manualIncome.toFixed(2)} €</span>
+            <div>
+              <div style={bigNumber}>{incomeWarmmiete.toFixed(0)} €</div>
+              <div style={label}>Warmmiete (Brutto)</div>
             </div>
           </div>
 
-          {/* Ausgaben */}
-          <div style={{ marginBottom: "25px" }}>
-            <div style={{ fontWeight: "700", color: "#dc3545", fontSize: "18px", marginBottom: "12px" }}>AUSGABEN</div>
-            
-            <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #eee" }}>
-              <span>Darlehensraten</span>
-              <span style={{ color: "#dc3545", fontWeight: "600" }}>-{expenseLoan.toFixed(2)} €</span>
+          <div style={card}>
+            <div style={iconBox}>
+              <Banknote size={28} />
             </div>
-            
-            <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #eee" }}>
-              <span>Nebenkosten</span>
-              <span style={{ color: "#dc3545", fontWeight: "600" }}>-{totalRealCosts.toFixed(2)} €</span>
-            </div>
-            
-            <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #eee" }}>
-              <span>Manuelle Ausgaben</span>
-              <span style={{ color: "#dc3545", fontWeight: "600" }}>-{manualExpense.toFixed(2)} €</span>
+            <div>
+              <div style={bigNumber}>{incomeKaltmiete.toFixed(0)} €</div>
+              <div style={label}>Kaltmiete (verfügbar)</div>
             </div>
           </div>
 
-          {/* NETTO ERGEBNIS */}
-          <div style={{
-            borderTop: "2px solid #ddd",
-            paddingTop: "20px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            fontSize: "20px",
-            fontWeight: "700"
-          }}>
-            <span>NETTO CASHFLOW</span>
-            <span style={{ color: cashflow >= 0 ? "#28a745" : "#dc3545", fontSize: "26px" }}>
-              {cashflow.toFixed(2)} €
-            </span>
+          <div style={card}>
+            <div style={iconBox}>
+              <ArrowDownRight size={28} />
+            </div>
+            <div>
+              <div style={bigNumber}>{(expenseLoan + totalRealCosts + manualExpense).toFixed(0)} €</div>
+              <div style={label}>Gesamtausgaben</div>
+            </div>
+          </div>
+
+          <div style={card}>
+            <div style={iconBox}>
+              <ArrowUpRight size={28} />
+            </div>
+            <div>
+              <div style={{
+                ...bigNumber,
+                color: cashflow >= 0 ? "#16a34a" : "#dc2626"
+              }}>
+                {cashflow.toFixed(0)} €
+              </div>
+              <div style={label}>Netto Cashflow</div>
+            </div>
           </div>
         </div>
-      )}
+
+        {/* Details Button */}
+        <div style={{ display: "flex", justifyContent: "center", margin: "40px 0" }}>
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            style={{
+              padding: "14px 32px",
+              background: "#0A2540",
+              color: "white",
+              border: "none",
+              borderRadius: 12,
+              fontSize: 16,
+              fontWeight: 600,
+              boxShadow: "0 6px 20px rgba(10, 37, 64, 0.25)"
+            }}
+          >
+            {showDetails ? "Details ausblenden" : "Cashflow Details anzeigen"}
+          </button>
+        </div>
+
+        {/* DETAIL-TABELLE – genau wie gewünscht */}
+        {showDetails && (
+          <div style={card}>
+            <h3 style={{ marginBottom: 24, color: "#0f172a" }}>Cashflow Aufschlüsselung</h3>
+
+            {/* Einnahmen */}
+            <div style={{ marginBottom: 32 }}>
+              <div style={{ fontWeight: 700, color: "#16a34a", fontSize: 18, marginBottom: 12 }}>EINNAHMEN</div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #e2e8f0" }}>
+                <span>Warmmiete (Brutto)</span>
+                <span style={{ color: "#16a34a", fontWeight: 600 }}>{incomeWarmmiete.toFixed(2)} €</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #e2e8f0" }}>
+                <span>Kaltmiete (verfügbar)</span>
+                <span style={{ color: "#16a34a", fontWeight: 600 }}>{incomeKaltmiete.toFixed(2)} €</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0" }}>
+                <span>Manuelle Einnahmen</span>
+                <span style={{ color: "#16a34a", fontWeight: 600 }}>{manualIncome.toFixed(2)} €</span>
+              </div>
+            </div>
+
+            {/* Ausgaben */}
+            <div style={{ marginBottom: 32 }}>
+              <div style={{ fontWeight: 700, color: "#dc2626", fontSize: 18, marginBottom: 12 }}>AUSGABEN</div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #e2e8f0" }}>
+                <span>Darlehensraten</span>
+                <span style={{ color: "#dc2626", fontWeight: 600 }}>-{expenseLoan.toFixed(2)} €</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #e2e8f0" }}>
+                <span>Nebenkosten</span>
+                <span style={{ color: "#dc2626", fontWeight: 600 }}>-{totalRealCosts.toFixed(2)} €</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0" }}>
+                <span>Manuelle Ausgaben</span>
+                <span style={{ color: "#dc2626", fontWeight: 600 }}>-{manualExpense.toFixed(2)} €</span>
+              </div>
+            </div>
+
+            {/* NETTO CASHFLOW */}
+            <div style={{
+              borderTop: "2px solid #0f172a",
+              paddingTop: 24,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              fontSize: 22,
+              fontWeight: 700
+            }}>
+              <span>NETTO CASHFLOW</span>
+              <span style={{ color: cashflow >= 0 ? "#16a34a" : "#dc2626", fontSize: 28 }}>
+                {cashflow.toFixed(2)} €
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
+
+/* =========================
+   SAAS STYLE (exakt wie in App.jsx)
+========================= */
+
+const page = {
+  minHeight: "100vh",
+  padding: 24,
+  background: "#f6f7fb",
+  fontFamily: "Inter, Arial",
+  color: "#0f172a",
+};
+
+const container = {
+  maxWidth: 1100,
+  margin: "0 auto",
+};
+
+const header = {
+  marginBottom: 40,
+  textAlign: "center",
+};
+
+const title = {
+  fontSize: 34,
+  fontWeight: 800,
+  marginBottom: 4,
+};
+
+const subtitle = {
+  fontSize: 16,
+  color: "#64748b",
+};
+
+const grid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+  gap: 20,
+};
+
+const card = {
+  background: "white",
+  padding: 24,
+  borderRadius: 16,
+  border: "1px solid #e2e8f0",
+  boxShadow: "0 6px 18px rgba(0,0,0,0.04)",
+  display: "flex",
+  alignItems: "center",
+  gap: 20,
+};
+
+const iconBox = {
+  width: 56,
+  height: 56,
+  borderRadius: 12,
+  background: "#f1f5f9",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+};
+
+const bigNumber = {
+  fontSize: 32,
+  fontWeight: 700,
+  color: "#0f172a",
+  lineHeight: 1,
+};
+
+const label = {
+  fontSize: 14,
+  fontWeight: 500,
+  color: "#64748b",
+};
