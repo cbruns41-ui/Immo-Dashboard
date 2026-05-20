@@ -105,13 +105,19 @@ export default function Auth({ children }) {
                 {isLogin ? "Einloggen" : "Registrieren"}
               </button>
 
-              <button onClick={() => setIsLogin(!isLogin)} style={linkBtn}>
+              <button
+                onClick={() => setIsLogin(!isLogin)}
+                style={linkBtn}
+              >
                 {isLogin
                   ? "Noch kein Account? Registrieren"
                   : "Zurück zum Login"}
               </button>
 
-              <button onClick={() => setForgotMode(true)} style={linkBtn}>
+              <button
+                onClick={() => setForgotMode(true)}
+                style={linkBtn}
+              >
                 Passwort vergessen
               </button>
             </>
@@ -123,11 +129,17 @@ export default function Auth({ children }) {
                 Passwort Reset Link wird an deine E-Mail gesendet
               </p>
 
-              <button onClick={handleResetPassword} style={primaryBtn}>
+              <button
+                onClick={handleResetPassword}
+                style={primaryBtn}
+              >
                 Reset Link senden
               </button>
 
-              <button onClick={() => setForgotMode(false)} style={linkBtn}>
+              <button
+                onClick={() => setForgotMode(false)}
+                style={linkBtn}
+              >
                 Zurück
               </button>
             </>
@@ -167,7 +179,7 @@ export default function Auth({ children }) {
 }
 
 /* =========================
-   STYLES (IMPROVED UI)
+   LOADING STYLE
 ========================= */
 
 const loadingStyle = {
@@ -180,6 +192,10 @@ const loadingStyle = {
   fontSize: 14,
 };
 
+/* =========================
+   PAGE WRAPPER (FIX MOBILE)
+========================= */
+
 const page = {
   minHeight: "100vh",
   display: "flex",
@@ -187,24 +203,38 @@ const page = {
   justifyContent: "center",
   background: "#f6f7fb",
   padding: 20,
+
   fontFamily: "Inter, Arial",
+
+  /* wichtig für iOS safe area */
+  paddingTop: "max(20px, env(safe-area-inset-top))",
+  paddingBottom: "max(20px, env(safe-area-inset-bottom))",
+  boxSizing: "border-box",
 };
+
+/* =========================
+   LOGIN CARD (FIXED MOBILE)
+========================= */
 
 const card = {
   width: "100%",
-  maxWidth: 420,
+  maxWidth: 360,              // <- verhindert Randproblem
   background: "white",
   borderRadius: 18,
-  padding: 28,
+  padding: 24,                // <- etwas kompakter
   border: "1px solid #e2e8f0",
   boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
   textAlign: "center",
   boxSizing: "border-box",
 };
 
+/* =========================
+   ICON
+========================= */
+
 const iconWrap = {
-  width: 64,
-  height: 64,
+  width: 60,
+  height: 60,
   margin: "0 auto 12px",
   borderRadius: 16,
   background: "#0f172a",
@@ -214,8 +244,12 @@ const iconWrap = {
   justifyContent: "center",
 };
 
+/* =========================
+   TEXT
+========================= */
+
 const title = {
-  fontSize: 26,
+  fontSize: 24,
   fontWeight: 800,
   marginBottom: 4,
   color: "#0f172a",
@@ -227,6 +261,22 @@ const subtitle = {
   marginBottom: 18,
 };
 
+const text = {
+  fontSize: 13,
+  color: "#64748b",
+  marginBottom: 10,
+};
+
+const success = {
+  fontSize: 14,
+  color: "#16a34a",
+  fontWeight: 600,
+};
+
+/* =========================
+   INPUTS (FIX MOBILE OVERFLOW)
+========================= */
+
 const input = {
   width: "100%",
   padding: 14,
@@ -237,6 +287,10 @@ const input = {
   outline: "none",
   boxSizing: "border-box",
 };
+
+/* =========================
+   BUTTONS
+========================= */
 
 const primaryBtn = {
   width: "100%",
@@ -260,17 +314,9 @@ const linkBtn = {
   cursor: "pointer",
 };
 
-const text = {
-  fontSize: 13,
-  color: "#64748b",
-  marginBottom: 10,
-};
-
-const success = {
-  fontSize: 14,
-  color: "#16a34a",
-  fontWeight: 600,
-};
+/* =========================
+   LOGOUT
+========================= */
 
 const logoutBtn = {
   position: "fixed",
@@ -282,4 +328,5 @@ const logoutBtn = {
   background: "white",
   cursor: "pointer",
   fontSize: 12,
+  zIndex: 9999,
 };
