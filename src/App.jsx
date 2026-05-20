@@ -10,6 +10,7 @@ import {
   FolderOpen,
   Settings as SettingsIcon,
   ArrowLeft,
+  FilePlus2,
 } from "lucide-react";
 
 import Dashboard from "./components/Dashboard";
@@ -33,18 +34,67 @@ export default function App() {
   const goHome = () => setCurrentPage("home");
 
   const tiles = [
-    { id: "uebersicht", label: "Übersicht", icon: LayoutDashboard, desc: "KPIs & Überblick" },
-    { id: "houses", label: "Häuser", icon: Home, desc: "Objekte verwalten" },
-    { id: "cashflow", label: "Cashflow", icon: TrendingUp, desc: "Einnahmen & Ausgaben" },
-    { id: "abrechnung", label: "Abrechnung", icon: FileText, desc: "Nebenkosten" },
-    { id: "appointments", label: "Termine", icon: Calendar, desc: "Besichtigungen" },
-    { id: "documents", label: "Dokumente", icon: Camera, desc: "Scans & Fotos" },
-    { id: "documentsmanager", label: "Manager", icon: FolderOpen, desc: "Dateiverwaltung" },
-    { id: "einstellungen", label: "Settings", icon: SettingsIcon, desc: "Konfiguration" },
+    {
+      id: "uebersicht",
+      label: "Übersicht",
+      icon: LayoutDashboard,
+      desc: "KPIs & Überblick",
+    },
+
+    {
+      id: "houses",
+      label: "Häuser",
+      icon: Home,
+      desc: "Objekte verwalten",
+    },
+
+    {
+      id: "cashflow",
+      label: "Cashflow",
+      icon: TrendingUp,
+      desc: "Einnahmen & Ausgaben",
+    },
+
+    /* UMBENANNT */
+    {
+      id: "abrechnung",
+      label: "PDF Generator",
+      icon: FilePlus2,
+      desc: "Verträge erstellen",
+    },
+
+    {
+      id: "documents",
+      label: "Dokumente",
+      icon: Camera,
+      desc: "Scans & Fotos",
+    },
+
+    {
+      id: "appointments",
+      label: "Termine",
+      icon: Calendar,
+      desc: "Besichtigungen",
+    },
+
+    {
+      id: "documentsmanager",
+      label: "Manager",
+      icon: FolderOpen,
+      desc: "Dateiverwaltung",
+    },
+
+    {
+      id: "einstellungen",
+      label: "Settings",
+      icon: SettingsIcon,
+      desc: "Konfiguration",
+    },
   ];
 
   return (
     <div style={page}>
+
       {/* BACK BUTTON */}
       {!isHome && (
         <button onClick={goHome} style={backBtn}>
@@ -56,14 +106,21 @@ export default function App() {
       {/* HOME */}
       {isHome && (
         <div style={container}>
+
+          {/* HEADER */}
           <div style={header}>
             <h1 style={title}>ImmoForge</h1>
-            <p style={subtitle}>Immobilien Management System</p>
+
+            <p style={subtitle}>
+              Immobilien Management System
+            </p>
           </div>
 
+          {/* GRID */}
           <div style={grid}>
             {tiles.map((t) => {
               const Icon = t.icon;
+
               return (
                 <button
                   key={t.id}
@@ -71,12 +128,17 @@ export default function App() {
                   style={card}
                 >
                   <div style={iconBox}>
-                    <Icon size={18} />
+                    <Icon size={22} />
                   </div>
 
-                  <div>
-                    <div style={label}>{t.label}</div>
-                    <div style={desc}>{t.desc}</div>
+                  <div style={textWrap}>
+                    <div style={label}>
+                      {t.label}
+                    </div>
+
+                    <div style={desc}>
+                      {t.desc}
+                    </div>
                   </div>
                 </button>
               );
@@ -87,14 +149,30 @@ export default function App() {
 
       {/* PAGES */}
       {currentPage === "uebersicht" && <Dashboard />}
+
       {currentPage === "houses" && <Houses />}
-      {currentPage === "appointments" && <Appointments />}
+
+      {currentPage === "appointments" && (
+        <Appointments />
+      )}
+
       {currentPage === "finanzen" && <Finances />}
+
       {currentPage === "cashflow" && <Cashflow />}
-      {currentPage === "abrechnung" && <Abrechnung />}
+
+      {currentPage === "abrechnung" && (
+        <Abrechnung />
+      )}
+
       {currentPage === "documents" && <Documents />}
-      {currentPage === "documentsmanager" && <DocumentsManager />}
-      {currentPage === "einstellungen" && <SettingsPage />}
+
+      {currentPage === "documentsmanager" && (
+        <DocumentsManager />
+      )}
+
+      {currentPage === "einstellungen" && (
+        <SettingsPage />
+      )}
 
       <InstallButton />
     </div>
@@ -107,86 +185,133 @@ export default function App() {
 
 const page = {
   minHeight: "100vh",
-  padding: 24,
+  padding: 20,
   background: "#f6f7fb",
   fontFamily: "Inter, Arial",
   color: "#0f172a",
+
+  /* IOS SAFE AREA */
+  paddingTop: "max(20px, env(safe-area-inset-top))",
+  paddingBottom: "max(20px, env(safe-area-inset-bottom))",
 };
 
 const container = {
-  maxWidth: 1100,
+  width: "100%",
+  maxWidth: 900,
   margin: "0 auto",
 };
 
 const header = {
-  marginBottom: 24,
+  marginBottom: 28,
+  textAlign: "center",
 };
 
 const title = {
-  fontSize: 34,
-  fontWeight: 800,
-  marginBottom: 4,
+  fontSize: 48,
+  fontWeight: 900,
+  marginBottom: 6,
+  letterSpacing: "-1px",
+  color: "#020617",
 };
 
 const subtitle = {
-  fontSize: 14,
+  fontSize: 18,
   color: "#64748b",
+  fontWeight: 500,
 };
 
 const grid = {
   display: "grid",
-  gridTemplateColumns: "repeat(2, 1fr)",
-  gap: 14,
+  gridTemplateColumns:
+    "repeat(auto-fit, minmax(320px, 360px))",
+  justifyContent: "center",
+  gap: 18,
 };
 
 /* CARD */
 const card = {
   display: "flex",
   alignItems: "center",
-  gap: 12,
-  padding: 16,
-  borderRadius: 14,
+  gap: 18,
+
+  width: "100%",
+  minHeight: 140,
+
+  padding: 22,
+
+  borderRadius: 24,
+
   background: "white",
+
   border: "1px solid #e2e8f0",
-  boxShadow: "0 6px 18px rgba(0,0,0,0.04)",
+
+  boxShadow: "0 8px 24px rgba(15,23,42,0.06)",
+
   cursor: "pointer",
+
   textAlign: "left",
+
+  transition: "0.2s ease",
 };
 
 const iconBox = {
-  width: 34,
-  height: 34,
-  borderRadius: 10,
+  width: 56,
+  height: 56,
+
+  borderRadius: 18,
+
   background: "#f1f5f9",
+
+  color: "#0f172a",
+
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+
+  flexShrink: 0,
+};
+
+const textWrap = {
+  flex: 1,
 };
 
 const label = {
-  fontSize: 14,
-  fontWeight: 600,
+  fontSize: 20,
+  fontWeight: 800,
+  color: "#0f172a",
+  marginBottom: 4,
 };
 
 const desc = {
-  fontSize: 12,
+  fontSize: 16,
   color: "#64748b",
+  lineHeight: 1.25,
 };
 
 const backBtn = {
   position: "fixed",
-  top: 18,
+
+  top: "max(18px, env(safe-area-inset-top))",
   left: 18,
+
   zIndex: 9999,
+
   display: "flex",
   alignItems: "center",
   gap: 8,
-  padding: "10px 14px",
+
+  padding: "10px 16px",
+
   borderRadius: 999,
+
   background: "white",
+
   border: "1px solid #e2e8f0",
-  fontSize: 13,
-  fontWeight: 600,
+
+  fontSize: 14,
+  fontWeight: 700,
+
   cursor: "pointer",
+
   boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
 };

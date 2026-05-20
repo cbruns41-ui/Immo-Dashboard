@@ -104,14 +104,32 @@ export default function DocumentsManager() {
     const mime = doc.mime_type || "";
     const url = doc.file_url || "";
 
-    if (mime.startsWith("image/") || url.match(/\.(jpg|jpeg|png|webp)$/i)) return "image";
+    if (
+      mime.startsWith("image/") ||
+      url.match(/\.(jpg|jpeg|png|webp)$/i)
+    )
+      return "image";
+
     if (mime.includes("pdf") || url.match(/\.pdf$/i)) return "pdf";
-    if (mime.includes("word") || url.match(/\.(doc|docx)$/i)) return "word";
-    if (mime.includes("sheet") || url.match(/\.(xls|xlsx)$/i)) return "excel";
+
+    if (
+      mime.includes("word") ||
+      url.match(/\.(doc|docx)$/i)
+    )
+      return "word";
+
+    if (
+      mime.includes("sheet") ||
+      url.match(/\.(xls|xlsx)$/i)
+    )
+      return "excel";
+
     return "other";
   };
 
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 900;
+  const isMobile =
+    typeof window !== "undefined" &&
+    window.innerWidth < 900;
 
   // =========================
   // FILTERS
@@ -119,17 +137,35 @@ export default function DocumentsManager() {
   const filteredDocs = documents.filter((doc) => {
     const house = getHouse(doc.house_id);
 
-    const houseMatch = selectedHouse ? doc.house_id === selectedHouse : true;
-    const aptMatch = selectedApartment ? doc.apartment_id === selectedApartment : true;
-    const typeMatch = selectedType ? doc.type === selectedType : true;
+    const houseMatch = selectedHouse
+      ? doc.house_id === selectedHouse
+      : true;
+
+    const aptMatch = selectedApartment
+      ? doc.apartment_id === selectedApartment
+      : true;
+
+    const typeMatch = selectedType
+      ? doc.type === selectedType
+      : true;
 
     const searchMatch = search
       ? (
-          doc.file_name?.toLowerCase().includes(search.toLowerCase()) ||
-          doc.title?.toLowerCase().includes(search.toLowerCase()) ||
-          doc.type?.toLowerCase().includes(search.toLowerCase()) ||
-          doc.ocr_text?.toLowerCase().includes(search.toLowerCase()) ||
-          house?.name?.toLowerCase().includes(search.toLowerCase())
+          doc.file_name
+            ?.toLowerCase()
+            .includes(search.toLowerCase()) ||
+          doc.title
+            ?.toLowerCase()
+            .includes(search.toLowerCase()) ||
+          doc.type
+            ?.toLowerCase()
+            .includes(search.toLowerCase()) ||
+          doc.ocr_text
+            ?.toLowerCase()
+            .includes(search.toLowerCase()) ||
+          house?.name
+            ?.toLowerCase()
+            .includes(search.toLowerCase())
         )
       : true;
 
@@ -140,7 +176,13 @@ export default function DocumentsManager() {
         ? doc.is_favorite
         : doc.type === sidebarView;
 
-    return houseMatch && aptMatch && typeMatch && searchMatch && sidebarMatch;
+    return (
+      houseMatch &&
+      aptMatch &&
+      typeMatch &&
+      searchMatch &&
+      sidebarMatch
+    );
   });
 
   // =========================
@@ -159,16 +201,22 @@ export default function DocumentsManager() {
 
   return (
     <>
-      {/* MOBILE HEADER BAR – jetzt fixed und app-optimiert */}
+      {/* MOBILE HEADER */}
       {isMobile && (
         <div style={mobileTopBar}>
-          <button onClick={() => setMobileSidebarOpen(true)} style={menuBtn}>
+          <button
+            onClick={() => setMobileSidebarOpen(true)}
+            style={menuBtn}
+          >
             <Menu />
           </button>
 
-          <h2 style={{ margin: 0, fontSize: 18 }}>Dokumente</h2>
+          <h2 style={mobileTitle}>Dokumente</h2>
 
-          <button onClick={() => setUploadOpen(true)} style={uploadFabSmall}>
+          <button
+            onClick={() => setUploadOpen(true)}
+            style={uploadFabSmall}
+          >
             <UploadCloud size={18} />
           </button>
         </div>
@@ -177,27 +225,42 @@ export default function DocumentsManager() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: isMobile ? "1fr" : "260px 1fr",
+          gridTemplateColumns: isMobile
+            ? "1fr"
+            : "260px 1fr",
           gap: "24px",
-          padding: isMobile ? "80px 16px 28px 16px" : "28px",   // extra Top-Padding für feste App-Navigationsleiste (Home/Logout)
+          padding: isMobile
+            ? "150px 16px 28px 16px"
+            : "28px",
           maxWidth: "1450px",
           margin: "0 auto",
         }}
       >
-
         {/* =========================
-            SIDEBAR (DESKTOP)
+            SIDEBAR DESKTOP
         ========================= */}
         {!isMobile && (
           <div style={sidebar}>
-            <h3 style={{ marginTop: 0, color: "#0A2540" }}>Dokumente</h3>
+            <h3 style={{ marginTop: 0, color: "#0A2540" }}>
+              Dokumente
+            </h3>
 
-            <SidebarButton active={sidebarView === "all"} onClick={() => setSidebarView("all")}>
-              <FileText size={16} /> Alle
+            <SidebarButton
+              active={sidebarView === "all"}
+              onClick={() => setSidebarView("all")}
+            >
+              <FileText size={16} />
+              Alle
             </SidebarButton>
 
-            <SidebarButton active={sidebarView === "favorites"} onClick={() => setSidebarView("favorites")}>
-              <Star size={16} /> Favoriten
+            <SidebarButton
+              active={sidebarView === "favorites"}
+              onClick={() =>
+                setSidebarView("favorites")
+              }
+            >
+              <Star size={16} />
+              Favoriten
             </SidebarButton>
 
             <div style={divider} />
@@ -208,7 +271,8 @@ export default function DocumentsManager() {
                 active={sidebarView === t}
                 onClick={() => setSidebarView(t)}
               >
-                <FilePlus2 size={16} /> {t}
+                <FilePlus2 size={16} />
+                {t}
               </SidebarButton>
             ))}
 
@@ -222,7 +286,10 @@ export default function DocumentsManager() {
                   padding: 10,
                   borderRadius: 12,
                   cursor: "pointer",
-                  background: selectedHouse === h.id ? "#eef6ff" : "transparent",
+                  background:
+                    selectedHouse === h.id
+                      ? "#eef6ff"
+                      : "transparent",
                   display: "flex",
                   gap: 8,
                   alignItems: "center"
@@ -239,29 +306,52 @@ export default function DocumentsManager() {
             MAIN
         ========================= */}
         <div>
-
           {/* HEADER */}
-          <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <div
+            style={{
+              textAlign: "center",
+              marginBottom: 24
+            }}
+          >
             <UploadCloud size={34} />
-            <h1 style={{ margin: 0, fontSize: 32, fontWeight: 800, color: "#0A2540" }}>
+
+            <h1
+              style={{
+                margin: 0,
+                fontSize: 32,
+                fontWeight: 800,
+                color: "#0A2540"
+              }}
+            >
               Dokumente
             </h1>
+
             <p style={{ color: "#64748b" }}>
-              Alle Dokumente verwalten, filtern und durchsuchen
+              Alle Dokumente verwalten,
+              filtern und durchsuchen
             </p>
           </div>
 
           <input
             placeholder="Suche..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
             style={searchInput}
           />
 
           {loading ? (
             <p>Lade...</p>
           ) : filteredDocs.length === 0 ? (
-            <p style={{ textAlign: "center", fontSize: 18, color: "#64748b", marginTop: 60 }}>
+            <p
+              style={{
+                textAlign: "center",
+                fontSize: 18,
+                color: "#64748b",
+                marginTop: 60
+              }}
+            >
               Keine Dokumente
             </p>
           ) : (
@@ -273,7 +363,10 @@ export default function DocumentsManager() {
                 return (
                   <div key={doc.id} style={card}>
                     {fileType === "image" ? (
-                      <img src={doc.file_url} style={img} />
+                      <img
+                        src={doc.file_url}
+                        style={img}
+                      />
                     ) : (
                       <div style={placeholder}>
                         <FileText size={40} />
@@ -281,11 +374,33 @@ export default function DocumentsManager() {
                     )}
 
                     <b>{doc.file_name}</b>
-                    <p style={{ fontSize: 12, color: "#666" }}>{house?.name}</p>
+
+                    <p
+                      style={{
+                        fontSize: 12,
+                        color: "#666"
+                      }}
+                    >
+                      {house?.name}
+                    </p>
 
                     <div style={btnRow}>
-                      <a href={doc.file_url} target="_blank" style={btn}>Öffnen</a>
-                      <button onClick={() => deleteDocument(doc)} style={btnDanger}>Löschen</button>
+                      <a
+                        href={doc.file_url}
+                        target="_blank"
+                        style={btn}
+                      >
+                        Öffnen
+                      </a>
+
+                      <button
+                        onClick={() =>
+                          deleteDocument(doc)
+                        }
+                        style={btnDanger}
+                      >
+                        Löschen
+                      </button>
                     </div>
                   </div>
                 );
@@ -296,7 +411,10 @@ export default function DocumentsManager() {
       </div>
 
       {/* FLOAT BUTTON */}
-      <button onClick={() => setUploadOpen(true)} style={fab}>
+      <button
+        onClick={() => setUploadOpen(true)}
+        style={fab}
+      >
         <UploadCloud />
       </button>
 
@@ -307,26 +425,56 @@ export default function DocumentsManager() {
       />
 
       {/* =========================
-          MOBILE SIDEBAR DRAWER – jetzt mit hohem zIndex, damit er über der App-Navigationsleiste (Home/Logout) liegt
+          MOBILE SIDEBAR
       ========================= */}
       {isMobile && mobileSidebarOpen && (
-        <div style={overlay} onClick={() => setMobileSidebarOpen(false)}>
-          <div style={mobileSidebar} onClick={(e) => e.stopPropagation()}>
+        <div
+          style={overlay}
+          onClick={() =>
+            setMobileSidebarOpen(false)
+          }
+        >
+          <div
+            style={mobileSidebar}
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3>Filter</h3>
 
-            <SidebarButton active={sidebarView === "all"} onClick={() => setSidebarView("all")}>
-              <FileText size={16} /> Alle
+            <SidebarButton
+              active={sidebarView === "all"}
+              onClick={() => {
+                setSidebarView("all");
+                setMobileSidebarOpen(false);
+              }}
+            >
+              <FileText size={16} />
+              Alle
             </SidebarButton>
 
-            <SidebarButton active={sidebarView === "favorites"} onClick={() => setSidebarView("favorites")}>
-              <Star size={16} /> Favoriten
+            <SidebarButton
+              active={sidebarView === "favorites"}
+              onClick={() => {
+                setSidebarView("favorites");
+                setMobileSidebarOpen(false);
+              }}
+            >
+              <Star size={16} />
+              Favoriten
             </SidebarButton>
 
             <div style={divider} />
 
             {types.map((t) => (
-              <SidebarButton key={t} active={sidebarView === t} onClick={() => setSidebarView(t)}>
-                <Settings size={16} /> {t}
+              <SidebarButton
+                key={t}
+                active={sidebarView === t}
+                onClick={() => {
+                  setSidebarView(t);
+                  setMobileSidebarOpen(false);
+                }}
+              >
+                <Settings size={16} />
+                {t}
               </SidebarButton>
             ))}
           </div>
@@ -339,29 +487,39 @@ export default function DocumentsManager() {
 // =========================
 // UI COMPONENTS
 // =========================
-function SidebarButton({ children, active, onClick }) {
+
+function SidebarButton({
+  children,
+  active,
+  onClick
+}) {
   return (
-    <button onClick={onClick} style={{
-      width: "100%",
-      textAlign: "left",
-      padding: 10,
-      borderRadius: 12,
-      border: "none",
-      marginBottom: 6,
-      background: active ? "#0A2540" : "transparent",
-      color: active ? "white" : "#0A2540",
-      display: "flex",
-      gap: 8,
-      alignItems: "center",
-      cursor: "pointer"
-    }}>
+    <button
+      onClick={onClick}
+      style={{
+        width: "100%",
+        textAlign: "left",
+        padding: 10,
+        borderRadius: 12,
+        border: "none",
+        marginBottom: 6,
+        background: active
+          ? "#0A2540"
+          : "transparent",
+        color: active ? "white" : "#0A2540",
+        display: "flex",
+        gap: 8,
+        alignItems: "center",
+        cursor: "pointer",
+      }}
+    >
       {children}
     </button>
   );
 }
 
 // =========================
-// STYLES – optimiert für App-Darstellung (iOS PWA + Mobile)
+// STYLES
 // =========================
 
 const sidebar = {
@@ -384,11 +542,13 @@ const searchInput = {
   borderRadius: 12,
   border: "1px solid #ddd",
   marginBottom: 16,
+  boxSizing: "border-box",
 };
 
 const grid = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))",
+  gridTemplateColumns:
+    "repeat(auto-fill,minmax(260px,1fr))",
   gap: 16,
 };
 
@@ -396,6 +556,8 @@ const card = {
   background: "white",
   borderRadius: 16,
   padding: 12,
+  border: "1px solid #e2e8f0",
+  boxShadow: "0 6px 18px rgba(0,0,0,0.04)",
 };
 
 const img = {
@@ -403,14 +565,14 @@ const img = {
   height: 160,
   objectFit: "cover",
   borderRadius: 12,
-  display: "block"
+  display: "block",
 };
 
 const placeholder = {
   height: 160,
   display: "flex",
   alignItems: "center",
-  justifyContent: "center"
+  justifyContent: "center",
 };
 
 const btnRow = {
@@ -457,7 +619,7 @@ const overlay = {
   inset: 0,
   background: "rgba(0,0,0,0.4)",
   display: "flex",
-  zIndex: 10000,                    // höher als App-Navigationsleiste
+  zIndex: 10000,
 };
 
 const mobileSidebar = {
@@ -466,26 +628,39 @@ const mobileSidebar = {
   height: "100%",
   padding: 16,
   boxShadow: "4px 0 20px rgba(0,0,0,0.15)",
-  zIndex: 10001,                    // garantiert über Home/Logout-Button
+  zIndex: 10001,
 };
 
 const mobileTopBar = {
-  position: "fixed",                // jetzt fest oben – verhindert Überlappung
-  top: 0,
+  position: "fixed",
+  top: 70,
   left: 0,
   right: 0,
+  height: 60,
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  padding: 12,
+  padding: "0 16px",
   background: "white",
   borderBottom: "1px solid #eee",
-  zIndex: 9999,
+  zIndex: 9000,
+  boxSizing: "border-box",
+};
+
+const mobileTitle = {
+  margin: 0,
+  fontSize: 18,
+  fontWeight: 700,
+  color: "#0A2540",
 };
 
 const menuBtn = {
   background: "none",
   border: "none",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
 };
 
 const uploadFabSmall = {
@@ -495,4 +670,8 @@ const uploadFabSmall = {
   borderRadius: 10,
   width: 36,
   height: 36,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
 };

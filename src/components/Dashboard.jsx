@@ -64,7 +64,7 @@ export default function Dashboard() {
           <p style={subtitle}>Willkommen in deinem ImmoForge Dashboard</p>
         </div>
 
-        {/* KPI Cards Grid – exakt identisch mit Cashflow-Layout */}
+        {/* KPI Cards Grid – EXAKT identisch mit Cashflow (perfekt mittig + gleiche Abstände) */}
         <div style={grid}>
           {/* Häuser */}
           <div style={card}>
@@ -143,7 +143,7 @@ export default function Dashboard() {
 }
 
 /* =========================
-   SAAS STYLE – exakt identisch mit Cashflow.jsx (für perfekte Ausrichtung)
+   SAAS STYLE – EXAKT identisch mit Cashflow.jsx (damit alles perfekt mittig ist)
 ========================= */
 
 const page = {
