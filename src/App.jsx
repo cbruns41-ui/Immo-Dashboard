@@ -4,13 +4,13 @@ import {
   LayoutDashboard,
   Home,
   TrendingUp,
-  FileText,
   Calendar,
   Camera,
   FolderOpen,
   Settings as SettingsIcon,
   ArrowLeft,
   FilePlus2,
+  Receipt,
 } from "lucide-react";
 
 import Dashboard from "./components/Dashboard";
@@ -22,16 +22,25 @@ import SettingsPage from "./components/Settings";
 import Cashflow from "./components/Cashflow.jsx";
 import Documents from "./components/Documents";
 import DocumentsManager from "./components/DocumentsManager";
+import TaxExport from "./components/TaxExport";
 
 import InstallButton from "./components/InstallButton.jsx";
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState("home");
+  const [currentPage, setCurrentPage] =
+    useState("home");
 
   const isHome = currentPage === "home";
 
-  const navigate = (page) => setCurrentPage(page);
-  const goHome = () => setCurrentPage("home");
+  const navigate = (page) =>
+    setCurrentPage(page);
+
+  const goHome = () =>
+    setCurrentPage("home");
+
+  // =========================
+  // DASHBOARD TILES
+  // =========================
 
   const tiles = [
     {
@@ -55,12 +64,18 @@ export default function App() {
       desc: "Einnahmen & Ausgaben",
     },
 
-    /* UMBENANNT */
     {
       id: "abrechnung",
       label: "PDF Generator",
       icon: FilePlus2,
       desc: "Verträge erstellen",
+    },
+
+    {
+      id: "steuerexport",
+      label: "Steuer & Export",
+      icon: Receipt,
+      desc: "CSV & Steuerberater",
     },
 
     {
@@ -97,7 +112,10 @@ export default function App() {
 
       {/* BACK BUTTON */}
       {!isHome && (
-        <button onClick={goHome} style={backBtn}>
+        <button
+          onClick={goHome}
+          style={backBtn}
+        >
           <ArrowLeft size={18} />
           Home
         </button>
@@ -109,11 +127,15 @@ export default function App() {
 
           {/* HEADER */}
           <div style={header}>
-            <h1 style={title}>ImmoForge</h1>
+
+            <h1 style={title}>
+              ImmoForge
+            </h1>
 
             <p style={subtitle}>
               Immobilien Management System
             </p>
+
           </div>
 
           {/* GRID */}
@@ -124,14 +146,18 @@ export default function App() {
               return (
                 <button
                   key={t.id}
-                  onClick={() => navigate(t.id)}
+                  onClick={() =>
+                    navigate(t.id)
+                  }
                   style={card}
                 >
+
                   <div style={iconBox}>
                     <Icon size={22} />
                   </div>
 
                   <div style={textWrap}>
+
                     <div style={label}>
                       {t.label}
                     </div>
@@ -139,32 +165,52 @@ export default function App() {
                     <div style={desc}>
                       {t.desc}
                     </div>
+
                   </div>
+
                 </button>
               );
             })}
           </div>
+
         </div>
       )}
 
-      {/* PAGES */}
-      {currentPage === "uebersicht" && <Dashboard />}
+      {/* =========================
+          PAGES
+      ========================= */}
 
-      {currentPage === "houses" && <Houses />}
+      {currentPage === "uebersicht" && (
+        <Dashboard />
+      )}
+
+      {currentPage === "houses" && (
+        <Houses />
+      )}
 
       {currentPage === "appointments" && (
         <Appointments />
       )}
 
-      {currentPage === "finanzen" && <Finances />}
+      {currentPage === "finanzen" && (
+        <Finances />
+      )}
 
-      {currentPage === "cashflow" && <Cashflow />}
+      {currentPage === "cashflow" && (
+        <Cashflow />
+      )}
 
       {currentPage === "abrechnung" && (
         <Abrechnung />
       )}
 
-      {currentPage === "documents" && <Documents />}
+      {currentPage === "steuerexport" && (
+        <TaxExport />
+      )}
+
+      {currentPage === "documents" && (
+        <Documents />
+      )}
 
       {currentPage === "documentsmanager" && (
         <DocumentsManager />
@@ -174,25 +220,34 @@ export default function App() {
         <SettingsPage />
       )}
 
+      {/* INSTALL BUTTON */}
       <InstallButton />
+
     </div>
   );
 }
 
 /* =========================
-   SAAS STYLE
+   SAAS STYLE SYSTEM
 ========================= */
 
 const page = {
   minHeight: "100vh",
+
   padding: 20,
+
   background: "#f6f7fb",
+
   fontFamily: "Inter, Arial",
+
   color: "#0f172a",
 
   /* IOS SAFE AREA */
-  paddingTop: "max(20px, env(safe-area-inset-top))",
-  paddingBottom: "max(20px, env(safe-area-inset-bottom))",
+  paddingTop:
+    "max(20px, env(safe-area-inset-top))",
+
+  paddingBottom:
+    "max(20px, env(safe-area-inset-bottom))",
 };
 
 const container = {
@@ -222,19 +277,26 @@ const subtitle = {
 
 const grid = {
   display: "grid",
+
   gridTemplateColumns:
     "repeat(auto-fit, minmax(320px, 360px))",
+
   justifyContent: "center",
+
   gap: 18,
 };
 
 /* CARD */
+
 const card = {
   display: "flex",
+
   alignItems: "center",
+
   gap: 18,
 
   width: "100%",
+
   minHeight: 140,
 
   padding: 22,
@@ -245,7 +307,8 @@ const card = {
 
   border: "1px solid #e2e8f0",
 
-  boxShadow: "0 8px 24px rgba(15,23,42,0.06)",
+  boxShadow:
+    "0 8px 24px rgba(15,23,42,0.06)",
 
   cursor: "pointer",
 
@@ -265,7 +328,9 @@ const iconBox = {
   color: "#0f172a",
 
   display: "flex",
+
   alignItems: "center",
+
   justifyContent: "center",
 
   flexShrink: 0,
@@ -291,13 +356,17 @@ const desc = {
 const backBtn = {
   position: "fixed",
 
-  top: "max(18px, env(safe-area-inset-top))",
+  top:
+    "max(18px, env(safe-area-inset-top))",
+
   left: 18,
 
   zIndex: 9999,
 
   display: "flex",
+
   alignItems: "center",
+
   gap: 8,
 
   padding: "10px 16px",
@@ -309,9 +378,11 @@ const backBtn = {
   border: "1px solid #e2e8f0",
 
   fontSize: 14,
+
   fontWeight: 700,
 
   cursor: "pointer",
 
-  boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
+  boxShadow:
+    "0 6px 18px rgba(0,0,0,0.06)",
 };

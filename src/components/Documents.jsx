@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { supabase } from "../supabase/supabaseClient";
 import { useImmo } from "../context/ImmoContext";
 import { Camera, FileText } from "lucide-react";
@@ -8,6 +8,7 @@ export default function Documents() {
 
   const [selectedHouseId, setSelectedHouseId] = useState("");
   const [selectedApartmentId, setSelectedApartmentId] = useState("");
+  const [selectedDocType, setSelectedDocType] = useState("sonstiges"); // NEU: Manuelle Kategorie-Auswahl
 
   const [stream, setStream] = useState(null);
   const [photo, setPhoto] = useState(null);
@@ -99,7 +100,17 @@ export default function Documents() {
   };
 
   // =========================
-  // UPLOAD
+  // AUTO-DETECT + PREFILL (wie im Manager)
+  // =========================
+  useEffect(() => {
+    if (ocrText) {
+      const detected = autoDetectType(ocrText);
+      setSelectedDocType(detected);
+    }
+  }, [ocrText]);
+
+  // =========================
+  // UPLOAD (jetzt mit manueller Kategorie-Auswahl)
   // =========================
   const uploadPhoto = async () => {
     if (!photo || !selectedHouseId) {
@@ -135,7 +146,7 @@ export default function Documents() {
         apartment_id: selectedApartmentId || null,
         file_url: fileUrl,
         storage_path: filePath,
-        type: autoDetectType(ocrText),
+        type: selectedDocType,           // ← Jetzt die manuell gewählte Kategorie
         title: extractTitle(ocrText),
         ocr_text: ocrText,
         mime_type: "image/jpeg",
@@ -143,11 +154,13 @@ export default function Documents() {
 
       if (dbError) throw dbError;
 
-      alert("Gespeichert!");
+      alert("✅ Dokument gespeichert und im Manager sichtbar!");
 
+      // Reset alles
       setPhoto(null);
       setSelectedHouseId("");
       setSelectedApartmentId("");
+      setSelectedDocType("sonstiges");
       setOcrText("");
     } catch (e) {
       console.error(e);
@@ -158,7 +171,7 @@ export default function Documents() {
   };
 
   // =========================
-  // TYPE DETECTION
+  // TYPE DETECTION (exakt dieselben Werte wie im DocumentsManager)
   // =========================
   const autoDetectType = (text) => {
     const t = text.toLowerCase();
@@ -178,7 +191,7 @@ export default function Documents() {
     text?.split("\n")[0]?.slice(0, 60) || "Dokument";
 
   // =========================
-  // EDIT SAVE
+  // EDIT SAVE (unverändert)
   // =========================
   const saveEdit = async () => {
     const { error } = await supabase
@@ -206,7 +219,7 @@ export default function Documents() {
     <div style={page}>
       <div style={container}>
 
-        {/* HEADER (SAAS STYLE – perfekt zentriert) */}
+        {/* HEADER */}
         <div style={header}>
           <div style={headerIcon}>
             <FileText size={28} />
@@ -220,7 +233,7 @@ export default function Documents() {
           </div>
         </div>
 
-        {/* CAMERA CARD – zentriert und app-optimiert */}
+        {/* CAMERA CARD */}
         <div style={card}>
           <div style={cardHeader}>
             <div style={smallIcon}>
@@ -257,18 +270,16 @@ export default function Documents() {
               ) : (
                 <pre style={ocrBox}>{ocrText}</pre>
               )}
-
-              <button onClick={uploadPhoto} disabled={uploading} style={btn}>
-                Speichern
-              </button>
             </>
           )}
         </div>
 
-        {/* TARGET SELECTION CARD – nur bei Foto, ebenfalls zentriert */}
+        {/* TARGET + KATEGORIE SELECTION (nur bei Foto) */}
         {photo && (
           <div style={card}>
+            {/* Haus */}
             <select
+              value={selectedHouseId}
               onChange={(e) => setSelectedHouseId(e.target.value)}
               style={input}
             >
@@ -280,8 +291,10 @@ export default function Documents() {
               ))}
             </select>
 
+            {/* Wohnung */}
             {selectedHouse && (
               <select
+                value={selectedApartmentId}
                 onChange={(e) => setSelectedApartmentId(e.target.value)}
                 style={input}
               >
@@ -293,10 +306,34 @@ export default function Documents() {
                 ))}
               </select>
             )}
+
+            {/* NEU: Kategorie-Auswahl – exakt dieselben wie im DocumentsManager */}
+            <select
+              value={selectedDocType}
+              onChange={(e) => setSelectedDocType(e.target.value)}
+              style={input}
+            >
+              <option value="rechnung">Rechnung</option>
+              <option value="vertrag">Vertrag</option>
+              <option value="versicherung">Versicherung</option>
+              <option value="reparatur">Reparatur</option>
+              <option value="nebenkostenabrechnung">Nebenkostenabrechnung</option>
+              <option value="mahnung">Mahnung</option>
+              <option value="steuerrelevant">SteuerRelevant</option>
+              <option value="sonstiges">Sonstiges</option>
+            </select>
+
+            <button
+              onClick={uploadPhoto}
+              disabled={uploading}
+              style={btn}
+            >
+              {uploading ? "Speichert..." : "Jetzt speichern"}
+            </button>
           </div>
         )}
 
-        {/* EDIT MODAL */}
+        {/* EDIT MODAL (unverändert) */}
         {editOpen && editDoc && (
           <div style={overlay}>
             <div style={modal}>
@@ -321,8 +358,8 @@ export default function Documents() {
                 <option value="vertrag">Vertrag</option>
                 <option value="versicherung">Versicherung</option>
                 <option value="reparatur">Reparatur</option>
+                <option value="nebenkostenabrechnung">Nebenkostenabrechnung</option>
                 <option value="mahnung">Mahnung</option>
-                <option value="nebenkostenabrechnung">Nebenkosten</option>
                 <option value="steuerrelevant">SteuerRelevant</option>
                 <option value="sonstiges">Sonstiges</option>
               </select>
@@ -345,7 +382,7 @@ export default function Documents() {
 }
 
 /* =========================
-   STYLES – optimiert für App-Darstellung (iOS PWA + Mobile)
+   STYLES (unverändert)
 ========================= */
 
 const page = {
@@ -431,7 +468,7 @@ const hint = {
 
 const btn = {
   padding: 16,
-  background: "#0f172a",           // schwarz wie in der letzten Abrechnung-Seite
+  background: "#0f172a",
   color: "white",
   border: "none",
   borderRadius: 14,

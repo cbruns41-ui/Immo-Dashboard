@@ -34,23 +34,19 @@ export default function Houses() {
     notes: "",
   });
 
-  // ==================== Haus hinzufügen / bearbeiten ====================
   const addHouse = async () => {
     if (!houseName.trim()) return;
-
-    const existingHouse = houses.find((h) => h.id === editHouseId);
 
     const newHouseData = {
       id: editHouseId || uuidv4(),
       name: houseName,
-      apartments: existingHouse?.apartments || [],
-      costs: existingHouse?.costs || JSON.parse(JSON.stringify(defaultCosts)),
+      apartments: [],
+      costs: JSON.parse(JSON.stringify(defaultCosts)),
       monthlyLoan: Number(monthlyLoan) || 0,
       interestRate: Number(interestRate) || 0,
     };
 
     let newHouses;
-
     if (editHouseId) {
       newHouses = houses.map((h) =>
         h.id === editHouseId ? { ...h, ...newHouseData } : h
@@ -69,7 +65,6 @@ export default function Houses() {
 
   const deleteHouse = async (id) => {
     if (!window.confirm("Haus und alle Wohnungen wirklich löschen?")) return;
-
     const newHouses = houses.filter((h) => h.id !== id);
     await setHouses([...newHouses]);
   };
@@ -81,7 +76,6 @@ export default function Houses() {
     setEditHouseId(house.id);
   };
 
-  // ==================== Wohnung ====================
   const addApartment = async (houseId) => {
     if (!newApartment.name.trim()) return;
 
@@ -135,15 +129,11 @@ export default function Houses() {
   };
 
   const startEditApartment = (houseId, apt) => {
-    setEditApartment({
-      houseId,
-      apt: { ...apt },
-    });
+    setEditApartment({ houseId, apt: { ...apt } });
   };
 
   const saveApartmentEdit = async () => {
     if (!editApartment) return;
-
     const newHouses = houses.map((h) => {
       if (h.id === editApartment.houseId) {
         return {
@@ -155,21 +145,17 @@ export default function Houses() {
       }
       return h;
     });
-
     await setHouses([...newHouses]);
     setEditApartment(null);
   };
 
-  // ==================== Nebenkosten (bidirektional) ====================
   const updateCosts = async (houseId, costType, field, value) => {
     const newHouses = houses.map((h) => {
       if (h.id === houseId) {
         const updatedCosts = { ...h.costs };
-
         if (!updatedCosts[costType]) {
           updatedCosts[costType] = { month: 0, quarter: 0, year: 0 };
         }
-
         const numValue = Number(value) || 0;
         updatedCosts[costType][field] = numValue;
 
@@ -183,12 +169,10 @@ export default function Houses() {
           updatedCosts[costType].month = numValue / 12;
           updatedCosts[costType].quarter = numValue / 3;
         }
-
         return { ...h, costs: updatedCosts };
       }
       return h;
     });
-
     await setHouses([...newHouses]);
   };
 
@@ -217,9 +201,9 @@ export default function Houses() {
           <p style={subtitle}>Verwaltung deiner Objekte</p>
         </div>
 
-        {/* Neues Haus */}
+        {/* Neues Haus hinzufügen */}
         <div style={card}>
-          <h3 style={{ marginTop: 0, marginBottom: 20 }}>Neues Haus hinzufügen</h3>
+          <h3 style={formTitle}>Neues Haus hinzufügen</h3>
 
           <input
             value={houseName}
@@ -228,25 +212,21 @@ export default function Houses() {
             style={input}
           />
 
-          <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
-            <div style={{ flex: 1 }}>
-              <input
-                type="number"
-                value={monthlyLoan}
-                onChange={(e) => setMonthlyLoan(e.target.value)}
-                placeholder="Monatliche Darlehensrate (€)"
-                style={input}
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <input
-                type="number"
-                value={interestRate}
-                onChange={(e) => setInterestRate(e.target.value)}
-                placeholder="Zinssatz (%)"
-                style={input}
-              />
-            </div>
+          <div style={inputRow}>
+            <input
+              type="number"
+              value={monthlyLoan}
+              onChange={(e) => setMonthlyLoan(e.target.value)}
+              placeholder="Monatliche Darlehensrate (€)"
+              style={input}
+            />
+            <input
+              type="number"
+              value={interestRate}
+              onChange={(e) => setInterestRate(e.target.value)}
+              placeholder="Zinssatz (%)"
+              style={input}
+            />
           </div>
 
           <button onClick={addHouse} style={primaryBtn}>
@@ -257,13 +237,13 @@ export default function Houses() {
         {/* Häuser Liste */}
         {houses.map((house) => (
           <div key={house.id} style={card}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <div style={houseHeader}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <Home size={28} />
                 <h3 style={{ margin: 0 }}>{house.name}</h3>
               </div>
 
-              <div>
+              <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => startEditHouse(house)} style={editBtn}>Bearbeiten</button>
                 <button onClick={() => deleteHouse(house.id)} style={deleteBtn}>Löschen</button>
               </div>
@@ -272,13 +252,12 @@ export default function Houses() {
             {/* Darlehens-Info */}
             {(house.monthlyLoan > 0 || house.interestRate > 0) && (
               <div style={infoBox}>
-                <strong>Darlehen:</strong> {house.monthlyLoan} € / Monat
-                {house.interestRate > 0 && ` (${house.interestRate}% Zins)`}
+                Darlehen: {house.monthlyLoan} € / Monat ({house.interestRate}% Zins)
               </div>
             )}
 
             {/* Wohnung hinzufügen */}
-            <div style={{ marginTop: 30, marginBottom: 30 }}>
+            <div style={{ marginTop: 30 }}>
               <h4>Wohnung hinzufügen</h4>
 
               <input
@@ -302,7 +281,7 @@ export default function Houses() {
                 style={input}
               />
 
-              <div style={{ display: "flex", gap: 12 }}>
+              <div style={inputRow}>
                 <input
                   type="number"
                   value={newApartment.kaltmiete}
@@ -333,15 +312,15 @@ export default function Houses() {
 
             {/* Wohnungen anzeigen */}
             {(house.apartments || []).length > 0 && (
-              <div style={{ marginBottom: 30 }}>
+              <div style={{ marginTop: 30 }}>
                 <h4>Wohnungen ({house.apartments.length})</h4>
                 {house.apartments.map((apt) => (
                   <div key={apt.id} style={subCard}>
                     <strong>{apt.name}</strong> – {apt.tenant} {apt.tenant2 && `& ${apt.tenant2}`}
-                    <div style={{ marginTop: 8 }}>
+                    <div style={{ marginTop: 8, fontSize: 14 }}>
                       Kalt: {apt.kaltmiete} € | Warm: {apt.warmmiete} € | Kaution: {apt.deposit} €
                     </div>
-                    <div style={{ marginTop: 12 }}>
+                    <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
                       <button onClick={() => startEditApartment(house.id, apt)} style={editBtn}>Bearbeiten</button>
                       <button onClick={() => deleteApartment(house.id, apt.id)} style={deleteBtn}>Löschen</button>
                     </div>
@@ -365,8 +344,8 @@ export default function Houses() {
 
             {openCostsHouse[house.id] && (
               <div style={costsCard}>
+                {/* ... Nebenkosten-Tabelle bleibt unverändert ... */}
                 <h4>Nebenkosten für {house.name}</h4>
-
                 <div style={costsGrid}>
                   <div>Kostenart</div>
                   <div>Monat</div>
@@ -421,9 +400,8 @@ export default function Houses() {
 }
 
 /* =========================
-   SAAS STYLE (exakt wie Appointments.jsx)
+   SAAS STYLE – exakt wie bei den anderen Seiten
 ========================= */
-
 const page = {
   minHeight: "100vh",
   padding: 24,
@@ -462,6 +440,36 @@ const card = {
   marginBottom: 32,
 };
 
+const formTitle = { marginTop: 0, marginBottom: 20, color: "#0f172a", fontSize: 20, fontWeight: 600 };
+
+const input = {
+  width: "100%",
+  padding: 16,
+  marginBottom: 16,
+  borderRadius: 12,
+  border: "1px solid #e2e8f0",
+  fontSize: 16,
+  background: "#f8fafc",
+};
+
+const inputRow = {
+  display: "flex",
+  gap: 16,
+  marginBottom: 20,
+};
+
+const primaryBtn = {
+  width: "100%",
+  padding: 16,
+  background: "#0A2540",
+  color: "white",
+  border: "none",
+  borderRadius: 12,
+  fontSize: 17,
+  fontWeight: 600,
+  cursor: "pointer",
+};
+
 const subCard = {
   background: "#f8f9fa",
   padding: 16,
@@ -469,10 +477,56 @@ const subCard = {
   marginBottom: 12,
 };
 
+const houseHeader = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 20,
+};
+
+const editBtn = {
+  padding: "8px 16px",
+  background: "#f1f5f9",
+  border: "none",
+  borderRadius: 10,
+  marginRight: 8,
+  fontSize: 14,
+};
+
+const deleteBtn = {
+  padding: "8px 16px",
+  background: "#fee2e2",
+  color: "#ef4444",
+  border: "none",
+  borderRadius: 10,
+  fontSize: 14,
+};
+
+const infoBox = {
+  background: "#f8f9fa",
+  padding: 16,
+  borderRadius: 12,
+  marginBottom: 24,
+  fontSize: 15,
+};
+
+const secondaryBtn = {
+  padding: "12px 24px",
+  background: "#f1f5f9",
+  color: "#0f172a",
+  border: "none",
+  borderRadius: 12,
+  fontSize: 15,
+  fontWeight: 600,
+  width: "100%",
+  marginTop: 10,
+};
+
 const costsCard = {
   background: "#f8f9fa",
   padding: 24,
   borderRadius: 16,
+  marginTop: 16,
 };
 
 const costsGrid = {
@@ -488,6 +542,7 @@ const smallInput = {
   borderRadius: 8,
   border: "1px solid #ddd",
   textAlign: "center",
+  fontSize: 14,
 };
 
 const costsSummary = {
@@ -499,56 +554,4 @@ const costsSummary = {
   display: "flex",
   flexDirection: "column",
   gap: 8,
-};
-
-const primaryBtn = {
-  padding: "14px 30px",
-  background: "#0A2540",
-  color: "white",
-  border: "none",
-  borderRadius: 12,
-  fontSize: 16,
-  fontWeight: 600,
-};
-
-const secondaryBtn = {
-  padding: "12px 24px",
-  background: "#f1f5f9",
-  color: "#0f172a",
-  border: "none",
-  borderRadius: 12,
-  fontSize: 15,
-  fontWeight: 600,
-};
-
-const editBtn = {
-  padding: "8px 16px",
-  background: "#f1f5f9",
-  border: "none",
-  borderRadius: 10,
-  marginRight: 8,
-};
-
-const deleteBtn = {
-  padding: "8px 16px",
-  background: "#fee2e2",
-  color: "#ef4444",
-  border: "none",
-  borderRadius: 10,
-};
-
-const input = {
-  width: "100%",
-  padding: 16,
-  marginBottom: 12,
-  borderRadius: 12,
-  border: "1px solid #e2e8f0",
-  fontSize: 16,
-};
-
-const infoBox = {
-  background: "#f8f9fa",
-  padding: "15px",
-  borderRadius: "12px",
-  marginBottom: "25px",
 };
