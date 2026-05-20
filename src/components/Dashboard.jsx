@@ -64,7 +64,7 @@ export default function Dashboard() {
           <p style={subtitle}>Willkommen in deinem ImmoForge Dashboard</p>
         </div>
 
-        {/* KPI Cards Grid – jetzt perfekt mittig und app-freundlich */}
+        {/* KPI Cards Grid – exakt identisch mit Cashflow-Layout */}
         <div style={grid}>
           {/* Häuser */}
           <div style={card}>
@@ -143,14 +143,14 @@ export default function Dashboard() {
 }
 
 /* =========================
-   SAAS STYLE – optimiert für App-Darstellung (iOS PWA + Mobile)
+   SAAS STYLE – exakt identisch mit Cashflow.jsx (für perfekte Ausrichtung)
 ========================= */
 
 const page = {
   minHeight: "100vh",
-  padding: "24px 16px",           // etwas weniger Padding auf sehr schmalen Geräten
+  padding: 24,
   background: "#f6f7fb",
-  fontFamily: "Inter, Arial, sans-serif",
+  fontFamily: "Inter, Arial",
   color: "#0f172a",
 };
 
@@ -177,10 +177,8 @@ const subtitle = {
 
 const grid = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, 280px)",   // feste Breite → immer gleich große Karten
-  justifyContent: "center",                         // komplett mittig ausrichten
+  gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
   gap: 20,
-  paddingBottom: 40,
 };
 
 const card = {
@@ -192,8 +190,6 @@ const card = {
   display: "flex",
   alignItems: "center",
   gap: 20,
-  width: "100%",          // wichtig für auto-fit
-  maxWidth: "280px",      // verhindert Dehnung
 };
 
 const iconBox = {
