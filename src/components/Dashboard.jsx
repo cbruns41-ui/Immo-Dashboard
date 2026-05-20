@@ -22,7 +22,6 @@ export default function Dashboard() {
   );
   const totalAppointments = safeAppointments.length;
 
-  // ====================== KORREKTE BERECHNUNG ======================
   const totalWarmmieteYearly = safeHouses.reduce((sum, house) => {
     return (
       sum +
@@ -64,58 +63,43 @@ export default function Dashboard() {
           <p style={subtitle}>Willkommen in deinem ImmoForge Dashboard</p>
         </div>
 
-        {/* KPI Cards Grid – EXAKT identisch mit Cashflow (perfekt mittig + gleiche Abstände) */}
+        {/* KPI Cards – jetzt perfekt ausgerichtet auf Handy */}
         <div style={grid}>
-          {/* Häuser */}
-          <div style={card}>
-            <div style={iconBox}>
-              <Home size={28} />
-            </div>
-            <div>
+          <div style={kpiCard}>
+            <div style={iconBox}><Home size={28} /></div>
+            <div style={kpiContent}>
               <div style={bigNumber}>{totalHouses}</div>
               <div style={label}>Häuser</div>
             </div>
           </div>
 
-          {/* Wohnungen */}
-          <div style={card}>
-            <div style={iconBox}>
-              <Building2 size={28} />
-            </div>
-            <div>
+          <div style={kpiCard}>
+            <div style={iconBox}><Building2 size={28} /></div>
+            <div style={kpiContent}>
               <div style={bigNumber}>{totalApartments}</div>
               <div style={label}>Wohnungen</div>
             </div>
           </div>
 
-          {/* Warmmiete jährlich */}
-          <div style={card}>
-            <div style={iconBox}>
-              <TrendingUp size={28} />
-            </div>
-            <div>
+          <div style={kpiCard}>
+            <div style={iconBox}><TrendingUp size={28} /></div>
+            <div style={kpiContent}>
               <div style={bigNumber}>{totalWarmmieteYearly.toFixed(0)} €</div>
               <div style={label}>Warmmiete (VZ) jährlich</div>
             </div>
           </div>
 
-          {/* Kaltmiete jährlich */}
-          <div style={card}>
-            <div style={iconBox}>
-              <Banknote size={28} />
-            </div>
-            <div>
+          <div style={kpiCard}>
+            <div style={iconBox}><Banknote size={28} /></div>
+            <div style={kpiContent}>
               <div style={bigNumber}>{totalKaltmieteYearly.toFixed(0)} €</div>
               <div style={label}>Kaltmiete gesamt (jährlich)</div>
             </div>
           </div>
 
-          {/* Überschuss / Verlust */}
-          <div style={card}>
-            <div style={iconBox}>
-              <ArrowUpRight size={28} />
-            </div>
-            <div>
+          <div style={kpiCard}>
+            <div style={iconBox}><ArrowUpRight size={28} /></div>
+            <div style={kpiContent}>
               <div style={{
                 ...bigNumber,
                 color: difference >= 0 ? "#16a34a" : "#dc2626"
@@ -126,12 +110,9 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Termine */}
-          <div style={card}>
-            <div style={iconBox}>
-              <Calendar size={28} />
-            </div>
-            <div>
+          <div style={kpiCard}>
+            <div style={iconBox}><Calendar size={28} /></div>
+            <div style={kpiContent}>
               <div style={bigNumber}>{totalAppointments}</div>
               <div style={label}>Termine</div>
             </div>
@@ -143,9 +124,8 @@ export default function Dashboard() {
 }
 
 /* =========================
-   SAAS STYLE – EXAKT identisch mit Cashflow.jsx (damit alles perfekt mittig ist)
+   SAAS STYLE – identisch mit Cashflow (Zahlen exakt untereinander)
 ========================= */
-
 const page = {
   minHeight: "100vh",
   padding: 24,
@@ -181,7 +161,7 @@ const grid = {
   gap: 20,
 };
 
-const card = {
+const kpiCard = {
   background: "white",
   padding: 24,
   borderRadius: 16,
@@ -203,6 +183,10 @@ const iconBox = {
   flexShrink: 0,
 };
 
+const kpiContent = {
+  flex: 1,
+};
+
 const bigNumber = {
   fontSize: 32,
   fontWeight: 700,
@@ -214,4 +198,5 @@ const label = {
   fontSize: 14,
   fontWeight: 500,
   color: "#64748b",
+  marginTop: 4,
 };

@@ -19,23 +19,16 @@ export default function UploadDocumentModal({
   const [selectedApartment, setSelectedApartment] = useState("");
   const [type, setType] = useState("sonstiges");
 
-  // =========================
-  // FILE HANDLING
-  // =========================
   const handleFiles = (fileList) => {
     const arr = Array.from(fileList || []);
     setFiles(arr);
   };
 
-  // =========================
-  // UPLOAD
-  // =========================
   const uploadFiles = async () => {
     if (!files.length) {
       alert("Bitte Dateien auswählen");
       return;
     }
-
     if (!selectedHouse) {
       alert("Bitte Haus auswählen");
       return;
@@ -72,7 +65,7 @@ export default function UploadDocumentModal({
 
         const fileUrl = `${data.publicUrl}?t=${Date.now()}`;
 
-        const { error: insertError } = await supabase
+        await supabase
           .from("documents")
           .insert({
             user_id: user?.id,
@@ -88,10 +81,6 @@ export default function UploadDocumentModal({
             is_favorite: false,
             storage_folder: folder,
           });
-
-        if (insertError) {
-          console.error("DB ERROR:", insertError);
-        }
       }
 
       setFiles([]);
@@ -118,21 +107,18 @@ export default function UploadDocumentModal({
     <div style={overlayStyle}>
       <div style={modalStyle}>
 
-        {/* =========================
-            HEADER (SAAS UNIFIED FIX)
-        ========================= */}
+        {/* HEADER */}
         <div style={pageHeader}>
           <div style={pageIcon}>
             <UploadCloud size={28} />
           </div>
-
-          <h1 style={pageTitle}>Dokumente</h1>
+          <h1 style={pageTitle}>Dokumente hochladen</h1>
           <p style={pageSubtitle}>
             Dateien hochladen und automatisch dem richtigen Objekt zuordnen
           </p>
 
           <button onClick={onClose} style={closeBtn}>
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
@@ -147,11 +133,11 @@ export default function UploadDocumentModal({
           style={dropzoneStyle}
         >
           <FolderUp size={42} />
-          <p style={{ fontWeight: 600, marginTop: 10 }}>
+          <p style={{ fontWeight: 600, marginTop: 12 }}>
             Dokumente hochladen
           </p>
-          <p style={{ color: "#64748b", fontSize: "13px" }}>
-            klicken oder Dateien hineinziehen
+          <p style={{ color: "#64748b", fontSize: "13px", marginTop: 4 }}>
+            Tippen oder Dateien hineinziehen
           </p>
 
           <input
@@ -178,8 +164,7 @@ export default function UploadDocumentModal({
         )}
 
         {/* FORM */}
-        <div style={formGridStyle}>
-
+        <div style={formStyle}>
           <select
             value={selectedHouse}
             onChange={(e) => {
@@ -201,7 +186,7 @@ export default function UploadDocumentModal({
             onChange={(e) => setSelectedApartment(e.target.value)}
             style={inputStyle}
           >
-            <option value="">Wohnung optional</option>
+            <option value="">Wohnung (optional)</option>
             {apartments.map((a) => (
               <option key={a.id} value={a.id}>
                 {a.name}
@@ -212,7 +197,7 @@ export default function UploadDocumentModal({
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
-            style={{ ...inputStyle, gridColumn: "1 / -1" }}
+            style={inputStyle}
           >
             <option value="rechnung">Rechnung</option>
             <option value="vertrag">Vertrag</option>
@@ -223,7 +208,6 @@ export default function UploadDocumentModal({
             <option value="steuerrelevant">Steuerrelevant</option>
             <option value="sonstiges">Sonstiges</option>
           </select>
-
         </div>
 
         {/* BUTTONS */}
@@ -237,7 +221,7 @@ export default function UploadDocumentModal({
             disabled={uploading}
             style={uploadBtn}
           >
-            {uploading ? "Upload läuft..." : "Hochladen"}
+            {uploading ? "Upload läuft..." : "Jetzt hochladen"}
           </button>
         </div>
 
@@ -247,33 +231,29 @@ export default function UploadDocumentModal({
 }
 
 /* =========================
-   SAAS UNIFIED STYLES
+   MOBILE-OPTIMIERTE SAAS STYLES
 ========================= */
-
 const overlayStyle = {
   position: "fixed",
   inset: 0,
-  background: "rgba(15, 23, 42, 0.6)",
+  background: "rgba(15, 23, 42, 0.75)",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
   zIndex: 9999,
-  padding: 20,
+  padding: "20px 16px",
 };
 
 const modalStyle = {
   width: "100%",
-  maxWidth: 700,
+  maxWidth: 520,
   background: "white",
   borderRadius: 20,
-  padding: 28,
+  padding: 24,
+  boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
   fontFamily: "Inter, Arial",
   color: "#0f172a",
 };
-
-/* =========================
-   HEADER (MATCH DASHBOARD STYLE)
-========================= */
 
 const pageHeader = {
   textAlign: "center",
@@ -282,18 +262,18 @@ const pageHeader = {
 };
 
 const pageIcon = {
-  width: 60,
-  height: 60,
+  width: 64,
+  height: 64,
   borderRadius: 16,
   background: "#f1f5f9",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  margin: "0 auto 10px",
+  margin: "0 auto 12px",
 };
 
 const pageTitle = {
-  fontSize: 32,
+  fontSize: 28,
   fontWeight: 800,
   margin: 0,
 };
@@ -308,17 +288,16 @@ const closeBtn = {
   position: "absolute",
   right: 0,
   top: 0,
-  border: "none",
   background: "#f1f5f9",
-  width: 38,
-  height: 38,
-  borderRadius: 10,
+  border: "none",
+  width: 40,
+  height: 40,
+  borderRadius: 12,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
   cursor: "pointer",
 };
-
-/* =========================
-   REST
-========================= */
 
 const dropzoneStyle = {
   border: "2px dashed #e2e8f0",
@@ -327,34 +306,36 @@ const dropzoneStyle = {
   textAlign: "center",
   cursor: "pointer",
   background: "#f8fafc",
-  marginBottom: 20,
+  marginBottom: 24,
 };
 
 const fileListStyle = {
   display: "flex",
   flexDirection: "column",
   gap: 10,
-  marginBottom: 20,
-};
-
-const fileItemStyle = {
-  padding: 12,
-  background: "#f8fafc",
-  borderRadius: 12,
-};
-
-const formGridStyle = {
-  display: "grid",
-  gridTemplateColumns: "1fr 1fr",
-  gap: 12,
   marginBottom: 24,
 };
 
-const inputStyle = {
+const fileItemStyle = {
   padding: 14,
+  background: "#f8fafc",
+  borderRadius: 12,
+  fontSize: 14,
+};
+
+const formStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 12,
+  marginBottom: 28,
+};
+
+const inputStyle = {
+  padding: 16,
   borderRadius: 12,
   border: "1px solid #e2e8f0",
-  fontSize: 14,
+  fontSize: 16,
+  background: "#f8fafc",
 };
 
 const buttonRowStyle = {
@@ -364,20 +345,21 @@ const buttonRowStyle = {
 
 const cancelBtn = {
   flex: 1,
-  padding: 14,
+  padding: 16,
   borderRadius: 12,
   border: "1px solid #e2e8f0",
   background: "white",
-  cursor: "pointer",
   fontWeight: 600,
+  cursor: "pointer",
 };
 
 const uploadBtn = {
   flex: 2,
-  padding: 14,
+  padding: 16,
   borderRadius: 12,
   border: "none",
   background: "#0A2540",
   color: "white",
   fontWeight: 700,
+  cursor: "pointer",
 };

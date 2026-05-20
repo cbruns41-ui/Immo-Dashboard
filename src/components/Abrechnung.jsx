@@ -5,6 +5,7 @@ import { defaultCosts } from "../utils/calculations";
 import {
   FileText,
   Home,
+  Building2,        // ← wurde gefehlt
   Calendar,
   Percent,
   Download,
@@ -30,7 +31,6 @@ export default function Abrechnung() {
 
   const getBaseData = () => {
     if (!selectedHouse || !selectedApartment) return null;
-
     return {
       house: selectedHouse,
       apartment: selectedApartment,
@@ -78,23 +78,13 @@ export default function Abrechnung() {
       };
     });
 
-    const totalActual = Object.values(result.costs).reduce(
-      (sum, c) => sum + c.actual,
-      0
-    );
-
-    const totalPaidCosts = Object.values(result.costs).reduce(
-      (sum, c) => sum + c.paid,
-      0
-    );
+    const totalActual = Object.values(result.costs).reduce((sum, c) => sum + c.actual, 0);
+    const totalPaidCosts = Object.values(result.costs).reduce((sum, c) => sum + c.paid, 0);
 
     result.totalNebenkosten = Math.round(totalActual * 100) / 100;
     result.totalPaidCosts = Math.round(totalPaidCosts * 100) / 100;
-    result.totalPaid =
-      Math.round(nebenkostenVorauszahlung * months * 100) / 100;
-
-    result.balance =
-      Math.round((result.totalNebenkosten - result.totalPaid) * 100) / 100;
+    result.totalPaid = Math.round(nebenkostenVorauszahlung * months * 100) / 100;
+    result.balance = Math.round((result.totalNebenkosten - result.totalPaid) * 100) / 100;
 
     return result;
   };
@@ -102,52 +92,43 @@ export default function Abrechnung() {
   const generateNebenkostenPDF = () => {
     const abrechnung = calculatePreciseAbrechnung();
     if (!abrechnung) return alert("Bitte Daten auswählen!");
-
     const doc = new jsPDF();
     doc.setFontSize(18);
     doc.text("NEBENKOSTENABRECHNUNG", 105, 30, { align: "center" });
-
     doc.setFontSize(11);
     doc.text(`Mieter: ${abrechnung.tenant}`, 20, 60);
     doc.text(`Wohnung: ${abrechnung.apartment}`, 20, 70);
     doc.text(`Zeitraum: ${abrechnung.period}`, 20, 80);
-
     doc.save(`Nebenkosten_${abrechnung.tenant}.pdf`);
   };
 
   const generatePlaceholderPDF = (title) => {
     const base = getBaseData();
     if (!base) return alert("Bitte Haus & Wohnung auswählen!");
-
     const doc = new jsPDF();
     doc.setFontSize(18);
     doc.text(title.toUpperCase(), 105, 30, { align: "center" });
-
     doc.setFontSize(11);
     doc.text(`Mieter: ${base.tenant}`, 20, 60);
     doc.text(`Wohnung: ${base.apartment.name}`, 20, 70);
     doc.text(`Haus: ${base.house.name}`, 20, 80);
     doc.text(`Zeitraum: ${base.period}`, 20, 90);
-
     doc.save(`${title}_${base.tenant}.pdf`);
   };
 
   return (
     <div style={page}>
       <div style={container}>
-
         <div style={header}>
           <h1 style={title}>PDF Generator</h1>
           <p style={subtitle}>Verträge & Dokumente schnell erstellen</p>
         </div>
 
-        {/* INPUT */}
+        {/* INPUT SECTION */}
         <div style={card}>
-          <FileText size={26} />
-
-          <div style={{ flex: 1 }}>
+          <div style={inputGroup}>
             <div style={field}>
-              <Home size={18} />
+              <Home size={20} />
               <select
                 value={selectedHouseId}
                 onChange={(e) => {
@@ -167,7 +148,7 @@ export default function Abrechnung() {
 
             {selectedHouse && (
               <div style={field}>
-                <Home size={18} />
+                <Building2 size={20} />
                 <select
                   value={selectedApartmentId}
                   onChange={(e) => setSelectedApartmentId(e.target.value)}
@@ -183,14 +164,13 @@ export default function Abrechnung() {
               </div>
             )}
 
-            <div style={grid}>
+            <div style={dateRow}>
               <input
                 type="date"
                 value={periodStart}
                 onChange={(e) => setPeriodStart(e.target.value)}
                 style={input}
               />
-
               <input
                 type="date"
                 value={periodEnd}
@@ -200,7 +180,7 @@ export default function Abrechnung() {
             </div>
 
             <div style={field}>
-              <Percent size={18} />
+              <Percent size={20} />
               <input
                 type="number"
                 value={sharePercentage}
@@ -211,131 +191,131 @@ export default function Abrechnung() {
           </div>
         </div>
 
-        {/* ACTIONS */}
-        <div style={gridActions}>
-
+        {/* ACTION CARDS */}
+        <div style={actionsGrid}>
           <div style={actionCard}>
-            <FilePlus2 />
-            <div style={{ flex: 1 }}>
+            <FilePlus2 size={24} />
+            <div style={actionText}>
               <div style={actionTitle}>Nebenkostenabrechnung</div>
               <div style={actionDesc}>Automatisch berechnete Abrechnung</div>
             </div>
-
             <button style={downloadBtn} onClick={generateNebenkostenPDF}>
-              <Download size={16} />
-              Download
+              <Download size={22} />
             </button>
           </div>
 
           <div style={actionCard}>
-            <FileSignature />
-            <div style={{ flex: 1 }}>
+            <FileSignature size={24} />
+            <div style={actionText}>
               <div style={actionTitle}>Mietvertrag</div>
               <div style={actionDesc}>Vertrag aus Daten generieren</div>
             </div>
-
             <button style={downloadBtn} onClick={() => generatePlaceholderPDF("Mietvertrag")}>
-              <Download size={16} />
-              Download
+              <Download size={22} />
             </button>
           </div>
 
           <div style={actionCard}>
-            <FileWarning />
-            <div style={{ flex: 1 }}>
+            <FileWarning size={24} />
+            <div style={actionText}>
               <div style={actionTitle}>Mahnung</div>
               <div style={actionDesc}>Zahlungserinnerung erstellen</div>
             </div>
-
             <button style={downloadBtn} onClick={() => generatePlaceholderPDF("Mahnung")}>
-              <Download size={16} />
-              Download
+              <Download size={22} />
             </button>
           </div>
 
           <div style={actionCard}>
-            <ClipboardList />
-            <div style={{ flex: 1 }}>
+            <ClipboardList size={24} />
+            <div style={actionText}>
               <div style={actionTitle}>Übergabeprotokoll</div>
               <div style={actionDesc}>Wohnungsübergabe dokumentieren</div>
             </div>
-
             <button style={downloadBtn} onClick={() => generatePlaceholderPDF("Übergabeprotokoll")}>
-              <Download size={16} />
-              Download
+              <Download size={22} />
             </button>
           </div>
-
         </div>
-
       </div>
     </div>
   );
 }
 
-/* ========================= STYLE ========================= */
-
+/* =========================
+   MOBILE-OPTIMIERTE SAAS STYLE
+========================= */
 const page = {
   minHeight: "100vh",
-  padding: "24px 16px",
+  padding: "20px 16px",
   background: "#f6f7fb",
   fontFamily: "Inter, Arial",
+  color: "#0f172a",
 };
 
 const container = { maxWidth: 900, margin: "0 auto" };
 
 const header = { textAlign: "center", marginBottom: 24 };
-
-const title = { fontSize: 34, fontWeight: 800 };
-
-const subtitle = { color: "#64748b" };
+const title = { fontSize: 32, fontWeight: 800 };
+const subtitle = { color: "#64748b", fontSize: 15 };
 
 const card = {
   background: "white",
   padding: 20,
   borderRadius: 16,
   border: "1px solid #e2e8f0",
-  display: "flex",
-  gap: 16,
-  marginBottom: 16,
+  boxShadow: "0 6px 18px rgba(0,0,0,0.04)",
+  marginBottom: 20,
 };
 
-const field = { display: "flex", gap: 10, marginBottom: 10, alignItems: "center" };
+const inputGroup = { display: "flex", flexDirection: "column", gap: 12 };
 
-const grid = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 };
-
-const input = {
-  width: "100%",
-  padding: 12,
-  borderRadius: 10,
+const field = {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  background: "#f8fafc",
+  borderRadius: 12,
+  padding: "4px 12px",
   border: "1px solid #e2e8f0",
 };
 
-const gridActions = { display: "grid", gap: 12 };
+const input = {
+  flex: 1,
+  padding: "12px 8px",
+  border: "none",
+  background: "transparent",
+  fontSize: 16,
+  outline: "none",
+};
+
+const dateRow = { display: "flex", gap: 12 };
+
+const actionsGrid = { display: "flex", flexDirection: "column", gap: 12 };
 
 const actionCard = {
   background: "white",
   padding: 16,
-  borderRadius: 14,
+  borderRadius: 16,
   border: "1px solid #e2e8f0",
   display: "flex",
   alignItems: "center",
-  gap: 12,
+  gap: 16,
 };
 
-const actionTitle = { fontWeight: 700 };
-
+const actionText = { flex: 1 };
+const actionTitle = { fontWeight: 700, fontSize: 17 };
 const actionDesc = { fontSize: 13, color: "#64748b" };
 
 const downloadBtn = {
+  width: 48,
+  height: 48,
   display: "flex",
   alignItems: "center",
-  gap: 6,
-  padding: "8px 12px",
-  borderRadius: 10,
-  border: "none",
-  background: "#0f172a",
+  justifyContent: "center",
+  background: "#0A2540",
   color: "white",
-  cursor: "pointer",
-  fontWeight: 700,
+  border: "none",
+  borderRadius: 12,
+  flexShrink: 0,
 };
