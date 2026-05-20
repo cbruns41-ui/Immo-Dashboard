@@ -159,7 +159,7 @@ export default function DocumentsManager() {
 
   return (
     <>
-      {/* MOBILE HEADER BAR */}
+      {/* MOBILE HEADER BAR – jetzt fixed und app-optimiert */}
       {isMobile && (
         <div style={mobileTopBar}>
           <button onClick={() => setMobileSidebarOpen(true)} style={menuBtn}>
@@ -179,7 +179,7 @@ export default function DocumentsManager() {
           display: "grid",
           gridTemplateColumns: isMobile ? "1fr" : "260px 1fr",
           gap: "24px",
-          padding: "28px",
+          padding: isMobile ? "80px 16px 28px 16px" : "28px",   // extra Top-Padding für feste App-Navigationsleiste (Home/Logout)
           maxWidth: "1450px",
           margin: "0 auto",
         }}
@@ -261,7 +261,9 @@ export default function DocumentsManager() {
           {loading ? (
             <p>Lade...</p>
           ) : filteredDocs.length === 0 ? (
-            <p>Keine Dokumente</p>
+            <p style={{ textAlign: "center", fontSize: 18, color: "#64748b", marginTop: 60 }}>
+              Keine Dokumente
+            </p>
           ) : (
             <div style={grid}>
               {filteredDocs.map((doc) => {
@@ -305,7 +307,7 @@ export default function DocumentsManager() {
       />
 
       {/* =========================
-          MOBILE SIDEBAR DRAWER
+          MOBILE SIDEBAR DRAWER – jetzt mit hohem zIndex, damit er über der App-Navigationsleiste (Home/Logout) liegt
       ========================= */}
       {isMobile && mobileSidebarOpen && (
         <div style={overlay} onClick={() => setMobileSidebarOpen(false)}>
@@ -359,8 +361,9 @@ function SidebarButton({ children, active, onClick }) {
 }
 
 // =========================
-// STYLES
+// STYLES – optimiert für App-Darstellung (iOS PWA + Mobile)
 // =========================
+
 const sidebar = {
   background: "white",
   borderRadius: 22,
@@ -445,6 +448,8 @@ const fab = {
   background: "#0A2540",
   color: "white",
   border: "none",
+  boxShadow: "0 6px 18px rgba(0,0,0,0.15)",
+  zIndex: 9999,
 };
 
 const overlay = {
@@ -452,6 +457,7 @@ const overlay = {
   inset: 0,
   background: "rgba(0,0,0,0.4)",
   display: "flex",
+  zIndex: 10000,                    // höher als App-Navigationsleiste
 };
 
 const mobileSidebar = {
@@ -459,15 +465,22 @@ const mobileSidebar = {
   background: "white",
   height: "100%",
   padding: 16,
+  boxShadow: "4px 0 20px rgba(0,0,0,0.15)",
+  zIndex: 10001,                    // garantiert über Home/Logout-Button
 };
 
 const mobileTopBar = {
+  position: "fixed",                // jetzt fest oben – verhindert Überlappung
+  top: 0,
+  left: 0,
+  right: 0,
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
   padding: 12,
   background: "white",
   borderBottom: "1px solid #eee",
+  zIndex: 9999,
 };
 
 const menuBtn = {

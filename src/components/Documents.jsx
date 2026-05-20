@@ -206,7 +206,7 @@ export default function Documents() {
     <div style={page}>
       <div style={container}>
 
-        {/* HEADER (SAAS STYLE FIXED) */}
+        {/* HEADER (SAAS STYLE – perfekt zentriert) */}
         <div style={header}>
           <div style={headerIcon}>
             <FileText size={28} />
@@ -220,7 +220,7 @@ export default function Documents() {
           </div>
         </div>
 
-        {/* CAMERA CARD */}
+        {/* CAMERA CARD – zentriert und app-optimiert */}
         <div style={card}>
           <div style={cardHeader}>
             <div style={smallIcon}>
@@ -265,7 +265,7 @@ export default function Documents() {
           )}
         </div>
 
-        {/* TARGET */}
+        {/* TARGET SELECTION CARD – nur bei Foto, ebenfalls zentriert */}
         {photo && (
           <div style={card}>
             <select
@@ -323,7 +323,7 @@ export default function Documents() {
                 <option value="reparatur">Reparatur</option>
                 <option value="mahnung">Mahnung</option>
                 <option value="nebenkostenabrechnung">Nebenkosten</option>
-                <option value="steuerrelevant">Steuerrelevant</option>
+                <option value="steuerrelevant">SteuerRelevant</option>
                 <option value="sonstiges">Sonstiges</option>
               </select>
 
@@ -345,14 +345,14 @@ export default function Documents() {
 }
 
 /* =========================
-   STYLES
+   STYLES – optimiert für App-Darstellung (iOS PWA + Mobile)
 ========================= */
 
 const page = {
   minHeight: "100vh",
-  padding: 24,
+  padding: "24px 16px",
   background: "#f6f7fb",
-  fontFamily: "Inter, Arial",
+  fontFamily: "Inter, Arial, sans-serif",
   color: "#0f172a",
 };
 
@@ -378,6 +378,7 @@ const headerIcon = {
   alignItems: "center",
   justifyContent: "center",
   boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
+  flexShrink: 0,
 };
 
 const title = {
@@ -399,6 +400,10 @@ const card = {
   border: "1px solid #e2e8f0",
   boxShadow: "0 6px 18px rgba(0,0,0,0.04)",
   marginBottom: 20,
+  width: "100%",
+  maxWidth: "520px",
+  marginLeft: "auto",
+  marginRight: "auto",
 };
 
 const cardHeader = {
@@ -425,19 +430,27 @@ const hint = {
 };
 
 const btn = {
-  padding: 14,
-  background: "#0A2540",
+  padding: 16,
+  background: "#0f172a",           // schwarz wie in der letzten Abrechnung-Seite
   color: "white",
   border: "none",
-  borderRadius: 12,
+  borderRadius: 14,
   width: "100%",
-  marginTop: 10,
+  fontWeight: 700,
+  fontSize: 16,
+  cursor: "pointer",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  gap: 8,
+  marginTop: 12,
 };
 
 const video = {
   width: "100%",
   borderRadius: 12,
   marginTop: 10,
+  background: "#000",
 };
 
 const img = {
@@ -453,6 +466,8 @@ const ocrBox = {
   padding: 12,
   borderRadius: 10,
   marginTop: 10,
+  maxHeight: 200,
+  overflowY: "auto",
 };
 
 const input = {
@@ -460,7 +475,9 @@ const input = {
   padding: 14,
   borderRadius: 12,
   border: "1px solid #e2e8f0",
-  marginBottom: 10,
+  marginBottom: 12,
+  fontSize: 14,
+  background: "white",
 };
 
 const overlay = {
@@ -470,11 +487,14 @@ const overlay = {
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
+  zIndex: 1000,
 };
 
 const modal = {
   background: "white",
-  padding: 20,
+  padding: 24,
   borderRadius: 16,
-  width: 400,
+  width: "90%",
+  maxWidth: 400,
+  boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
 };

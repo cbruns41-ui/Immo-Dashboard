@@ -151,7 +151,7 @@ export default function Abrechnung() {
           </p>
         </div>
 
-        {/* FORM CARD */}
+        {/* FORM CARD – perfekt zentriert und app-optimiert */}
         <Card>
           <div style={iconWrap}>
             <FileText size={26} />
@@ -233,7 +233,7 @@ export default function Abrechnung() {
               />
             </div>
 
-            {/* BUTTON */}
+            {/* BUTTON – jetzt schwarz, kein Floating, vollflächig und app-freundlich */}
             <button onClick={generatePDF} style={btn}>
               <Download size={18} />
               PDF erstellen
@@ -246,14 +246,14 @@ export default function Abrechnung() {
 }
 
 /* =========================
-   DASHBOARD-STYLE DESIGN SYSTEM
+   DASHBOARD-STYLE DESIGN SYSTEM – optimiert für App-Darstellung (iOS PWA + Mobile)
 ========================= */
 
 const page = {
   minHeight: "100vh",
-  padding: 24,
+  padding: "24px 16px",           // optimiert für Mobile / iOS App
   background: "#f6f7fb",
-  fontFamily: "Inter, Arial",
+  fontFamily: "Inter, Arial, sans-serif",
   color: "#0f172a",
 };
 
@@ -263,7 +263,7 @@ const container = {
 };
 
 const header = {
-  marginBottom: 60, // 🔥 FIX: mehr Abstand (kein Überschneiden mehr)
+  marginBottom: 60,
   textAlign: "center",
 };
 
@@ -287,6 +287,9 @@ const card = {
   display: "flex",
   gap: 20,
   alignItems: "flex-start",
+  width: "100%",           // volle Breite auf Mobile
+  maxWidth: "520px",       // schöne Breite auf allen Geräten
+  margin: "0 auto",        // perfekt zentriert
 };
 
 const iconWrap = {
@@ -297,6 +300,7 @@ const iconWrap = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+  flexShrink: 0,
 };
 
 const sectionTitle = {
@@ -333,12 +337,14 @@ const btn = {
   padding: 16,
   borderRadius: 14,
   border: "none",
-  background: "linear-gradient(135deg,#0A2540,#00D4C8)",
+  background: "#0f172a",           // jetzt schwarz (wie gewünscht)
   color: "white",
   fontWeight: 700,
+  fontSize: 16,
   cursor: "pointer",
   display: "flex",
   justifyContent: "center",
   gap: 8,
   alignItems: "center",
+  marginTop: 8,
 };
