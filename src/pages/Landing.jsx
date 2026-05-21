@@ -31,7 +31,7 @@ export default function Landing({ onLogin }) {
         </p>
 
         <div style={ctaRow}>
-          <button style={primaryBtn} onClick={onLogin}>
+          <button style={primaryBtn} disabled>
             Demo starten
             <ArrowRight size={16} />
           </button>
@@ -213,7 +213,8 @@ const primaryBtn = {
   color: "white",
   border: "none",
   fontWeight: 700,
-  cursor: "pointer",
+  cursor: "not-allowed",
+  opacity: 0.5,
   boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
 };
 

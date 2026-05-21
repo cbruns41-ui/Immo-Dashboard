@@ -34,10 +34,6 @@ export default function App() {
   const navigate = (page) => setCurrentPage(page);
   const goHome = () => setCurrentPage("home");
 
-  // =========================
-  // DASHBOARD TILES
-  // =========================
-
   const tiles = [
     {
       id: "uebersicht",
@@ -105,7 +101,7 @@ export default function App() {
         </button>
       )}
 
-      {/* HOME */}
+      {/* HOME (LANDING DASHBOARD) */}
       {isHome && (
         <div style={container}>
           <div style={header}>
@@ -156,7 +152,7 @@ export default function App() {
 }
 
 /* =========================
-   STYLE SYSTEM
+   STYLE (UNCHANGED CORE + MOBILE CLEANUP)
 ========================= */
 
 const page = {
@@ -184,14 +180,12 @@ const title = {
   fontSize: 48,
   fontWeight: 900,
   marginBottom: 6,
-  letterSpacing: "-1px",
   color: "#020617",
 };
 
 const subtitle = {
   fontSize: 18,
   color: "#64748b",
-  fontWeight: 500,
 };
 
 const grid = {
