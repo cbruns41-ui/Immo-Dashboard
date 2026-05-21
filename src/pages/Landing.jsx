@@ -1,57 +1,20 @@
-export default function Landing({
-  onLogin,
-}) {
+export default function Landing({ onLogin }) {
   return (
     <div style={page}>
-      <div style={heroGlow} />
-
       <div style={container}>
-        {/* NAVBAR */}
-
-        <div style={navbar}>
-          <div>
-            <div style={logo}>
-              ImmoForge
-            </div>
-
-            <div style={logoSub}>
-              SaaS für Vermieter
-            </div>
-          </div>
-
-          <button
-            style={loginBtn}
-            onClick={onLogin}
-          >
-            Login
-          </button>
-        </div>
 
         {/* HERO */}
-
         <div style={hero}>
-          <div style={badge}>
-            Moderne Immobilienverwaltung
-          </div>
-
-          <h1 style={title}>
-            Die moderne Plattform für
-            Vermieter & Immobilienverwaltung
-          </h1>
+          <h1 style={title}>ImmoForge</h1>
 
           <p style={subtitle}>
-            Cashflow, Dokumente,
-            Steuerexport, Nebenkosten,
-            PDF Generator und mehr —
-            alles in einer App.
+            Moderne Immobilienverwaltung für Vermieter.
+            Alles in einer App – Cashflow, Dokumente, Steuer & mehr.
           </p>
 
-          <div style={heroButtons}>
-            <button
-              style={primaryBtn}
-              onClick={onLogin}
-            >
-              Jetzt starten
+          <div style={buttonRow}>
+            <button style={primaryBtn} onClick={onLogin}>
+              Login / Starten
             </button>
 
             <button style={secondaryBtn}>
@@ -61,249 +24,183 @@ export default function Landing({
         </div>
 
         {/* FEATURES */}
-
         <div style={grid}>
           <div style={card}>
-            <h3>Cashflow</h3>
-
-            <p>
-              Einnahmen, Ausgaben &
-              Immobilienrendite im Blick.
-            </p>
+            <h3>Cashflow Tracking</h3>
+            <p>Einnahmen und Ausgaben automatisch verwalten.</p>
           </div>
 
           <div style={card}>
             <h3>Dokumente</h3>
-
-            <p>
-              Belege, PDFs und Scans
-              automatisch organisieren.
-            </p>
+            <p>Belege, Rechnungen und Mietverträge zentral speichern.</p>
           </div>
 
           <div style={card}>
-            <h3>DATEV Export</h3>
+            <h3>Steuer Export</h3>
+            <p>DATEV / CSV Export für Steuerberater.</p>
+          </div>
 
-            <p>
-              CSV Export für
-              Steuerberater &
-              Buchhaltung.
-            </p>
+          <div style={card}>
+            <h3>PDF Generator</h3>
+            <p>Nebenkostenabrechnung & Verträge erstellen.</p>
+          </div>
+        </div>
+
+        {/* NEWS / UPDATES */}
+        <div style={newsSection}>
+          <h2>Neu in ImmoForge</h2>
+
+          <div style={newsList}>
+            <div style={newsItem}>
+              🚀 Cashflow Modul verbessert
+            </div>
+
+            <div style={newsItem}>
+              📄 Dokumentenmanager mit Upload
+            </div>
+
+            <div style={newsItem}>
+              📊 Steuer Export für 2026 hinzugefügt
+            </div>
           </div>
         </div>
 
         {/* FOOTER */}
-
         <div style={footer}>
-          © 2026 ImmoForge · Impressum ·
-          Datenschutz
+          <span>Impressum</span>
+          <span>Datenschutz</span>
+          <span>Kontakt</span>
         </div>
+
       </div>
     </div>
   );
 }
 
+/* =========================
+   LAYOUT
+========================= */
+
 const page = {
   minHeight: "100vh",
-
-  background:
-    "linear-gradient(to bottom, #f8fafc, #eef2ff)",
-
+  background: "#f6f7fb",
+  display: "flex",
+  justifyContent: "center",
+  padding: 20,
   fontFamily: "Inter, Arial",
-
-  position: "relative",
-
-  overflow: "hidden",
-
-  padding: 24,
-};
-
-const heroGlow = {
-  position: "absolute",
-
-  width: 700,
-  height: 700,
-
-  borderRadius: "50%",
-
-  background:
-    "rgba(99,102,241,0.12)",
-
-  filter: "blur(80px)",
-
-  top: -200,
-  right: -200,
 };
 
 const container = {
   width: "100%",
-  maxWidth: 1200,
-  margin: "0 auto",
-  position: "relative",
-  zIndex: 2,
+  maxWidth: 1000,
 };
 
-const navbar = {
-  display: "flex",
-
-  alignItems: "center",
-
-  justifyContent: "space-between",
-
-  marginBottom: 80,
-};
-
-const logo = {
-  fontSize: 26,
-  fontWeight: 900,
-  color: "#0f172a",
-};
-
-const logoSub = {
-  fontSize: 13,
-  color: "#64748b",
-};
-
-const loginBtn = {
-  padding: "12px 18px",
-
-  borderRadius: 14,
-
-  border: "1px solid #e2e8f0",
-
-  background: "white",
-
-  fontWeight: 700,
-
-  cursor: "pointer",
-};
+/* =========================
+   HERO
+========================= */
 
 const hero = {
   textAlign: "center",
-  marginBottom: 80,
-};
-
-const badge = {
-  display: "inline-flex",
-
-  padding: "8px 14px",
-
-  borderRadius: 999,
-
-  background: "white",
-
-  border: "1px solid #e2e8f0",
-
-  fontSize: 13,
-
-  fontWeight: 700,
-
-  marginBottom: 20,
+  padding: "60px 20px",
 };
 
 const title = {
-  fontSize: "clamp(42px, 8vw, 82px)",
-
-  lineHeight: 1,
-
+  fontSize: 56,
   fontWeight: 900,
-
-  letterSpacing: "-2px",
-
-  color: "#020617",
-
-  maxWidth: 950,
-
-  margin: "0 auto 24px",
+  marginBottom: 10,
+  letterSpacing: "-1px",
+  color: "#0f172a",
 };
 
 const subtitle = {
-  fontSize: 20,
-
+  fontSize: 18,
   color: "#64748b",
-
-  maxWidth: 720,
-
-  margin: "0 auto 30px",
-
-  lineHeight: 1.6,
+  maxWidth: 600,
+  margin: "0 auto 30px auto",
+  lineHeight: 1.5,
 };
 
-const heroButtons = {
+const buttonRow = {
   display: "flex",
-
-  gap: 14,
-
+  gap: 12,
   justifyContent: "center",
-
   flexWrap: "wrap",
 };
 
 const primaryBtn = {
-  padding: "16px 24px",
-
-  borderRadius: 16,
-
+  padding: "12px 20px",
+  borderRadius: 12,
   border: "none",
-
   background: "#0f172a",
-
   color: "white",
-
-  fontWeight: 800,
-
+  fontWeight: 700,
   cursor: "pointer",
-
-  fontSize: 15,
 };
 
 const secondaryBtn = {
-  padding: "16px 24px",
-
-  borderRadius: 16,
-
-  border: "1px solid #e2e8f0",
-
+  padding: "12px 20px",
+  borderRadius: 12,
+  border: "1px solid #cbd5e1",
   background: "white",
-
-  fontWeight: 800,
-
+  color: "#0f172a",
+  fontWeight: 600,
   cursor: "pointer",
-
-  fontSize: 15,
 };
+
+/* =========================
+   FEATURES
+========================= */
 
 const grid = {
   display: "grid",
-
-  gridTemplateColumns:
-    "repeat(auto-fit, minmax(260px, 1fr))",
-
-  gap: 22,
+  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+  gap: 16,
+  marginTop: 40,
 };
 
 const card = {
-  background:
-    "rgba(255,255,255,0.8)",
-
-  backdropFilter: "blur(10px)",
-
+  background: "white",
+  padding: 20,
+  borderRadius: 16,
   border: "1px solid #e2e8f0",
-
-  borderRadius: 28,
-
-  padding: 28,
-
-  boxShadow:
-    "0 10px 30px rgba(15,23,42,0.05)",
+  boxShadow: "0 6px 18px rgba(0,0,0,0.04)",
 };
 
+/* =========================
+   NEWS
+========================= */
+
+const newsSection = {
+  marginTop: 60,
+  padding: 20,
+  background: "white",
+  borderRadius: 16,
+  border: "1px solid #e2e8f0",
+};
+
+const newsList = {
+  marginTop: 10,
+  display: "flex",
+  flexDirection: "column",
+  gap: 10,
+};
+
+const newsItem = {
+  padding: 10,
+  background: "#f8fafc",
+  borderRadius: 10,
+  fontSize: 14,
+};
+
+/* =========================
+   FOOTER
+========================= */
+
 const footer = {
-  marginTop: 80,
-
-  textAlign: "center",
-
-  color: "#94a3b8",
-
+  marginTop: 60,
+  display: "flex",
+  justifyContent: "center",
+  gap: 20,
   fontSize: 13,
+  color: "#94a3b8",
 };
