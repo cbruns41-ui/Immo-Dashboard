@@ -506,7 +506,7 @@ function SidebarButton({
         background: active
           ? "#0A2540"
           : "transparent",
-        color: active ? "white" : "#0A2540",
+        color: active ? "white" : "#040c14",
         display: "flex",
         gap: 8,
         alignItems: "center",
@@ -607,7 +607,7 @@ const fab = {
   width: 64,
   height: 64,
   borderRadius: "50%",
-  background: "#0A2540",
+  background: "#040f1a",
   color: "white",
   border: "none",
   boxShadow: "0 6px 18px rgba(0,0,0,0.15)",
@@ -651,7 +651,7 @@ const mobileTitle = {
   margin: 0,
   fontSize: 18,
   fontWeight: 700,
-  color: "#0A2540",
+  color: "#030b13",
 };
 
 const menuBtn = {
@@ -664,7 +664,7 @@ const menuBtn = {
 };
 
 const uploadFabSmall = {
-  background: "#0A2540",
+  background: "#040e18",
   color: "white",
   border: "none",
   borderRadius: 10,

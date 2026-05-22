@@ -204,7 +204,7 @@ const nettoRow = {
 
 const detailsBtn = {
   padding: "14px 32px",
-  background: "#0A2540",
+  background: "#030c14",
   color: "white",
   border: "none",
   borderRadius: 12,
