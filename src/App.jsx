@@ -1,16 +1,15 @@
 import { useState } from "react";
-
 import {
   LayoutDashboard,
   Home,
-  TrendingUp,
   Calendar,
+  TrendingUp,
   Camera,
   FolderOpen,
-  Settings as SettingsIcon,
   ArrowLeft,
-  FilePlus2,
+  FileText,
   Receipt,
+  Settings as SettingsIcon,     // ← Jetzt korrekt importiert
 } from "lucide-react";
 
 import Dashboard from "./components/Dashboard";
@@ -34,74 +33,26 @@ export default function App() {
   const navigate = (page) => setCurrentPage(page);
   const goHome = () => setCurrentPage("home");
 
-  const tiles = [
-    {
-      id: "uebersicht",
-      label: "Übersicht",
-      icon: LayoutDashboard,
-      desc: "KPIs & Überblick",
-    },
-    {
-      id: "houses",
-      label: "Häuser",
-      icon: Home,
-      desc: "Objekte verwalten",
-    },
-    {
-      id: "cashflow",
-      label: "Cashflow",
-      icon: TrendingUp,
-      desc: "Einnahmen & Ausgaben",
-    },
-    {
-      id: "abrechnung",
-      label: "PDF Generator",
-      icon: FilePlus2,
-      desc: "Verträge erstellen",
-    },
-    {
-      id: "steuerexport",
-      label: "Steuer & Export",
-      icon: Receipt,
-      desc: "CSV & Steuerberater",
-    },
-    {
-      id: "documents",
-      label: "Dokumente",
-      icon: Camera,
-      desc: "Scans & Fotos",
-    },
-    {
-      id: "appointments",
-      label: "Termine",
-      icon: Calendar,
-      desc: "Besichtigungen",
-    },
-    {
-      id: "documentsmanager",
-      label: "Manager",
-      icon: FolderOpen,
-      desc: "Dateiverwaltung",
-    },
-    {
-      id: "einstellungen",
-      label: "Settings",
-      icon: SettingsIcon,
-      desc: "Konfiguration",
-    },
+  // Bottom Navigation Items
+  const navItems = [
+    { id: "dashboard", label: "Übersicht", icon: LayoutDashboard },
+    { id: "houses", label: "Häuser", icon: Home },
+    { id: "appointments", label: "Termine", icon: Calendar },
+    { id: "cashflow", label: "Cashflow", icon: TrendingUp },
+    { id: "documents", label: "Dokumente", icon: Camera },
   ];
 
   return (
     <div style={page}>
-      {/* BACK BUTTON */}
+      {/* Back Button */}
       {!isHome && (
         <button onClick={goHome} style={backBtn}>
           <ArrowLeft size={18} />
-          Home
+          <span>Home</span>
         </button>
       )}
 
-      {/* HOME (LANDING DASHBOARD) */}
+      {/* HOME - Große Kacheln */}
       {isHome && (
         <div style={container}>
           <div style={header}>
@@ -112,7 +63,6 @@ export default function App() {
           <div style={grid}>
             {tiles.map((t) => {
               const Icon = t.icon;
-
               return (
                 <button
                   key={t.id}
@@ -120,9 +70,8 @@ export default function App() {
                   style={card}
                 >
                   <div style={iconBox}>
-                    <Icon size={22} />
+                    <Icon size={26} />
                   </div>
-
                   <div style={textWrap}>
                     <div style={label}>{t.label}</div>
                     <div style={desc}>{t.desc}</div>
@@ -134,8 +83,8 @@ export default function App() {
         </div>
       )}
 
-      {/* PAGES */}
-      {currentPage === "uebersicht" && <Dashboard />}
+      {/* Andere Seiten */}
+      {currentPage === "dashboard" && <Dashboard />}
       {currentPage === "houses" && <Houses />}
       {currentPage === "appointments" && <Appointments />}
       {currentPage === "finanzen" && <Finances />}
@@ -146,62 +95,73 @@ export default function App() {
       {currentPage === "documentsmanager" && <DocumentsManager />}
       {currentPage === "einstellungen" && <SettingsPage />}
 
+      {/* BOTTOM NAVIGATION */}
+      <div style={bottomNav}>
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = currentPage === item.id;
+
+          return (
+            <button
+              key={item.id}
+              onClick={() => navigate(item.id)}
+              style={isActive ? activeNavItem : navItem}
+            >
+              <Icon size={24} />
+              <span style={navLabel}>{item.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
       <InstallButton />
     </div>
   );
 }
 
 /* =========================
-   STYLE (UNCHANGED CORE + MOBILE CLEANUP)
+   TILES (unverändert)
 ========================= */
+const tiles = [
+  { id: "dashboard", label: "Übersicht", icon: LayoutDashboard, desc: "KPIs & Überblick" },
+  { id: "houses", label: "Häuser", icon: Home, desc: "Objekte verwalten" },
+  { id: "cashflow", label: "Cashflow", icon: TrendingUp, desc: "Einnahmen & Ausgaben" },
+  { id: "abrechnung", label: "PDF Generator", icon: FileText, desc: "Verträge erstellen" },
+  { id: "steuerexport", label: "Steuer & Export", icon: Receipt, desc: "CSV & Steuerberater" },
+  { id: "documents", label: "Dokumente", icon: Camera, desc: "Scans & Fotos" },
+  { id: "appointments", label: "Termine", icon: Calendar, desc: "Besichtigungen" },
+  { id: "documentsmanager", label: "Dokument Manager", icon: FolderOpen, desc: "Dateiverwaltung" },
+  { id: "einstellungen", label: "Einstellungen", icon: SettingsIcon, desc: "Konfiguration" },
+];
 
+/* =========================
+   SAAS + MOBILE STYLES
+========================= */
 const page = {
   minHeight: "100vh",
-  padding: 20,
   background: "#f6f7fb",
   fontFamily: "Inter, Arial",
   color: "#0f172a",
-  paddingTop: "max(20px, env(safe-area-inset-top))",
-  paddingBottom: "max(20px, env(safe-area-inset-bottom))",
+  paddingBottom: 80,
 };
 
-const container = {
-  width: "100%",
-  maxWidth: 900,
-  margin: "0 auto",
-};
+const container = { maxWidth: 900, margin: "0 auto", padding: "20px 16px" };
 
-const header = {
-  marginBottom: 28,
-  textAlign: "center",
-};
-
-const title = {
-  fontSize: 48,
-  fontWeight: 900,
-  marginBottom: 6,
-  color: "#020617",
-};
-
-const subtitle = {
-  fontSize: 18,
-  color: "#64748b",
-};
+const header = { textAlign: "center", marginBottom: 32 };
+const title = { fontSize: 42, fontWeight: 900, marginBottom: 6 };
+const subtitle = { fontSize: 18, color: "#64748b" };
 
 const grid = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(320px, 360px))",
-  justifyContent: "center",
+  gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
   gap: 18,
 };
 
 const card = {
   display: "flex",
   alignItems: "center",
-  gap: 18,
-  width: "100%",
-  minHeight: 140,
-  padding: 22,
+  gap: 20,
+  padding: 24,
   borderRadius: 24,
   background: "white",
   border: "1px solid #e2e8f0",
@@ -210,8 +170,8 @@ const card = {
 };
 
 const iconBox = {
-  width: 56,
-  height: 56,
+  width: 64,
+  height: 64,
   borderRadius: 18,
   background: "#f1f5f9",
   display: "flex",
@@ -220,17 +180,40 @@ const iconBox = {
 };
 
 const textWrap = { flex: 1 };
+const label = { fontSize: 21, fontWeight: 800, marginBottom: 4 };
+const desc = { fontSize: 15, color: "#64748b" };
 
-const label = {
-  fontSize: 20,
-  fontWeight: 800,
-  marginBottom: 4,
+const bottomNav = {
+  position: "fixed",
+  bottom: 0,
+  left: 0,
+  right: 0,
+  height: 74,
+  background: "white",
+  borderTop: "1px solid #e2e8f0",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-around",
+  boxShadow: "0 -4px 15px rgba(0,0,0,0.1)",
+  zIndex: 1000,
 };
 
-const desc = {
-  fontSize: 16,
+const navItem = {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
   color: "#64748b",
+  fontSize: 11,
+  gap: 4,
 };
+
+const activeNavItem = {
+  ...navItem,
+  color: "#0A2540",
+  fontWeight: 700,
+};
+
+const navLabel = { fontSize: 11, marginTop: 2 };
 
 const backBtn = {
   position: "fixed",
@@ -240,11 +223,11 @@ const backBtn = {
   display: "flex",
   alignItems: "center",
   gap: 8,
-  padding: "10px 16px",
+  padding: "10px 18px",
   borderRadius: 999,
   background: "white",
   border: "1px solid #e2e8f0",
-  fontSize: 14,
+  fontSize: 15,
   fontWeight: 700,
-  cursor: "pointer",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
 };
