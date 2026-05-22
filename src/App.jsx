@@ -6,10 +6,9 @@ import {
   TrendingUp,
   Camera,
   FolderOpen,
-  ArrowLeft,
   FileText,
   Receipt,
-  Settings as SettingsIcon,     // ← Jetzt korrekt importiert
+  Settings as SettingsIcon,
 } from "lucide-react";
 
 import Dashboard from "./components/Dashboard";
@@ -26,208 +25,216 @@ import TaxExport from "./components/TaxExport";
 import InstallButton from "./components/InstallButton.jsx";
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState("home");
+  // 🚀 Dashboard direkt als Startseite
+  const [currentPage, setCurrentPage] = useState("dashboard");
 
-  const isHome = currentPage === "home";
+  const navigate = (page) => {
+    setCurrentPage(page);
 
-  const navigate = (page) => setCurrentPage(page);
-  const goHome = () => setCurrentPage("home");
+    // Optional: sanft nach oben scrollen
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
 
-  // Bottom Navigation Items
+  // 📱 Moderne Scrollbare Bottom Navigation
   const navItems = [
-    { id: "dashboard", label: "Übersicht", icon: LayoutDashboard },
-    { id: "houses", label: "Häuser", icon: Home },
-    { id: "appointments", label: "Termine", icon: Calendar },
-    { id: "cashflow", label: "Cashflow", icon: TrendingUp },
-    { id: "documents", label: "Dokumente", icon: Camera },
+    {
+      id: "dashboard",
+      label: "Übersicht",
+      icon: LayoutDashboard,
+    },
+    {
+      id: "houses",
+      label: "Häuser",
+      icon: Home,
+    },
+    {
+      id: "cashflow",
+      label: "Cashflow",
+      icon: TrendingUp,
+    },
+    {
+      id: "documents",
+      label: "Dokumente",
+      icon: Camera,
+    },
+    {
+      id: "documentsmanager",
+      label: "Manager",
+      icon: FolderOpen,
+    },
+    {
+      id: "abrechnung",
+      label: "PDF",
+      icon: FileText,
+    },
+    {
+      id: "steuerexport",
+      label: "Export",
+      icon: Receipt,
+    },
+    {
+      id: "appointments",
+      label: "Termine",
+      icon: Calendar,
+    },
+    {
+      id: "einstellungen",
+      label: "Settings",
+      icon: SettingsIcon,
+    },
   ];
 
   return (
     <div style={page}>
-      {/* Back Button */}
-      {!isHome && (
-        <button onClick={goHome} style={backBtn}>
-          <ArrowLeft size={18} />
-          <span>Home</span>
-        </button>
-      )}
-
-      {/* HOME - Große Kacheln */}
-      {isHome && (
-        <div style={container}>
-          <div style={header}>
-            <h1 style={title}>ImmoForge</h1>
-            <p style={subtitle}>Immobilien Management System</p>
-          </div>
-
-          <div style={grid}>
-            {tiles.map((t) => {
-              const Icon = t.icon;
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => navigate(t.id)}
-                  style={card}
-                >
-                  <div style={iconBox}>
-                    <Icon size={26} />
-                  </div>
-                  <div style={textWrap}>
-                    <div style={label}>{t.label}</div>
-                    <div style={desc}>{t.desc}</div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Andere Seiten */}
-      {currentPage === "dashboard" && <Dashboard />}
-      {currentPage === "houses" && <Houses />}
-      {currentPage === "appointments" && <Appointments />}
-      {currentPage === "finanzen" && <Finances />}
-      {currentPage === "cashflow" && <Cashflow />}
-      {currentPage === "abrechnung" && <Abrechnung />}
-      {currentPage === "steuerexport" && <TaxExport />}
-      {currentPage === "documents" && <Documents />}
-      {currentPage === "documentsmanager" && <DocumentsManager />}
-      {currentPage === "einstellungen" && <SettingsPage />}
-
-      {/* BOTTOM NAVIGATION */}
-      <div style={bottomNav}>
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = currentPage === item.id;
-
-          return (
-            <button
-              key={item.id}
-              onClick={() => navigate(item.id)}
-              style={isActive ? activeNavItem : navItem}
-            >
-              <Icon size={24} />
-              <span style={navLabel}>{item.label}</span>
-            </button>
-          );
-        })}
+      {/* Seiten */}
+      <div style={content}>
+        {currentPage === "dashboard" && <Dashboard />}
+        {currentPage === "houses" && <Houses />}
+        {currentPage === "appointments" && <Appointments />}
+        {currentPage === "finanzen" && <Finances />}
+        {currentPage === "cashflow" && <Cashflow />}
+        {currentPage === "abrechnung" && <Abrechnung />}
+        {currentPage === "steuerexport" && <TaxExport />}
+        {currentPage === "documents" && <Documents />}
+        {currentPage === "documentsmanager" && <DocumentsManager />}
+        {currentPage === "einstellungen" && <SettingsPage />}
       </div>
 
+      {/* 🔥 Moderne Bottom Navigation */}
+      <div style={bottomNavWrapper}>
+        <div style={bottomNav}>
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentPage === item.id;
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => navigate(item.id)}
+                style={isActive ? activeNavItem : navItem}
+              >
+                <Icon size={20} strokeWidth={2.3} />
+
+                <span style={navLabel}>
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 📲 Install Button */}
       <InstallButton />
     </div>
   );
 }
 
 /* =========================
-   TILES (unverändert)
+   MODERN APP STYLES
 ========================= */
-const tiles = [
-  { id: "dashboard", label: "Übersicht", icon: LayoutDashboard, desc: "KPIs & Überblick" },
-  { id: "houses", label: "Häuser", icon: Home, desc: "Objekte verwalten" },
-  { id: "cashflow", label: "Cashflow", icon: TrendingUp, desc: "Einnahmen & Ausgaben" },
-  { id: "abrechnung", label: "PDF Generator", icon: FileText, desc: "Verträge erstellen" },
-  { id: "steuerexport", label: "Steuer & Export", icon: Receipt, desc: "CSV & Steuerberater" },
-  { id: "documents", label: "Dokumente", icon: Camera, desc: "Scans & Fotos" },
-  { id: "appointments", label: "Termine", icon: Calendar, desc: "Besichtigungen" },
-  { id: "documentsmanager", label: "Dokument Manager", icon: FolderOpen, desc: "Dateiverwaltung" },
-  { id: "einstellungen", label: "Einstellungen", icon: SettingsIcon, desc: "Konfiguration" },
-];
 
-/* =========================
-   SAAS + MOBILE STYLES
-========================= */
 const page = {
   minHeight: "100vh",
-  background: "#f6f7fb",
-  fontFamily: "Inter, Arial",
+  background:
+    "linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%)",
+  fontFamily:
+    "Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
   color: "#0f172a",
-  paddingBottom: 80,
 };
 
-const container = { maxWidth: 900, margin: "0 auto", padding: "20px 16px" };
-
-const header = { textAlign: "center", marginBottom: 32 };
-const title = { fontSize: 42, fontWeight: 900, marginBottom: 6 };
-const subtitle = { fontSize: 18, color: "#64748b" };
-
-const grid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-  gap: 18,
+const content = {
+  paddingBottom: 110,
 };
 
-const card = {
-  display: "flex",
-  alignItems: "center",
-  gap: 20,
-  padding: 24,
-  borderRadius: 24,
-  background: "white",
-  border: "1px solid #e2e8f0",
-  boxShadow: "0 8px 24px rgba(15,23,42,0.06)",
-  cursor: "pointer",
-};
+/* =========================
+   MODERN BOTTOM NAV
+========================= */
 
-const iconBox = {
-  width: 64,
-  height: 64,
-  borderRadius: 18,
-  background: "#f1f5f9",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
-
-const textWrap = { flex: 1 };
-const label = { fontSize: 21, fontWeight: 800, marginBottom: 4 };
-const desc = { fontSize: 15, color: "#64748b" };
-
-const bottomNav = {
+const bottomNavWrapper = {
   position: "fixed",
   bottom: 0,
   left: 0,
   right: 0,
-  height: 74,
-  background: "white",
-  borderTop: "1px solid #e2e8f0",
+  zIndex: 9999,
+
+  paddingBottom: "max(10px, env(safe-area-inset-bottom))",
+
+  background: "rgba(255,255,255,0.72)",
+
+  backdropFilter: "blur(22px)",
+  WebkitBackdropFilter: "blur(22px)",
+
+  borderTop: "1px solid rgba(226,232,240,0.7)",
+
+  boxShadow: "0 -10px 35px rgba(15,23,42,0.08)",
+};
+
+const bottomNav = {
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-around",
-  boxShadow: "0 -4px 15px rgba(0,0,0,0.1)",
-  zIndex: 1000,
+
+  gap: 12,
+
+  overflowX: "auto",
+  overflowY: "hidden",
+
+  whiteSpace: "nowrap",
+
+  padding: "14px 14px 6px",
+
+  scrollbarWidth: "none",
+  msOverflowStyle: "none",
 };
 
 const navItem = {
+  flexShrink: 0,
+
+  border: "none",
+  outline: "none",
+
+  background: "transparent",
+
   display: "flex",
   flexDirection: "column",
+
   alignItems: "center",
+  justifyContent: "center",
+
+  gap: 6,
+
+  minWidth: 74,
+  height: 64,
+
+  borderRadius: 20,
+
   color: "#64748b",
+
   fontSize: 11,
-  gap: 4,
+  fontWeight: 700,
+
+  transition: "all 0.22s ease",
+
+  cursor: "pointer",
 };
 
 const activeNavItem = {
   ...navItem,
-  color: "#0A2540",
-  fontWeight: 700,
+
+  background: "rgba(15,23,42,0.06)",
+
+  color: "#0f172a",
+
+  boxShadow: "0 4px 14px rgba(15,23,42,0.08)",
+
+  transform: "translateY(-2px)",
 };
 
-const navLabel = { fontSize: 11, marginTop: 2 };
-
-const backBtn = {
-  position: "fixed",
-  top: "max(18px, env(safe-area-inset-top))",
-  left: 18,
-  zIndex: 9999,
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  padding: "10px 18px",
-  borderRadius: 999,
-  background: "white",
-  border: "1px solid #e2e8f0",
-  fontSize: 15,
-  fontWeight: 700,
-  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+const navLabel = {
+  fontSize: 11,
+  fontWeight: 800,
+  letterSpacing: 0.2,
 };
