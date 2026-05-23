@@ -7,10 +7,7 @@ import {
   Menu,
   Star,
   FileText,
-  Shield,
   FilePlus2,
-  AlertTriangle,
-  Banknote,
   Settings,
   Home
 } from "lucide-react";
@@ -83,14 +80,13 @@ export default function DocumentsManager() {
       .update({ is_favorite: !doc.is_favorite })
       .eq("id", doc.id);
 
-    if (error) {
-      console.error(error);
-      return;
-    }
+    if (error) return;
 
     setDocuments((prev) =>
       prev.map((d) =>
-        d.id === doc.id ? { ...d, is_favorite: !d.is_favorite } : d
+        d.id === doc.id
+          ? { ...d, is_favorite: !d.is_favorite }
+          : d
       )
     );
   };
@@ -110,18 +106,13 @@ export default function DocumentsManager() {
     )
       return "image";
 
-    if (mime.includes("pdf") || url.match(/\.pdf$/i)) return "pdf";
+    if (mime.includes("pdf") || url.match(/\.pdf$/i))
+      return "pdf";
 
-    if (
-      mime.includes("word") ||
-      url.match(/\.(doc|docx)$/i)
-    )
+    if (mime.includes("word") || url.match(/\.(doc|docx)$/i))
       return "word";
 
-    if (
-      mime.includes("sheet") ||
-      url.match(/\.(xls|xlsx)$/i)
-    )
+    if (mime.includes("sheet") || url.match(/\.(xls|xlsx)$/i))
       return "excel";
 
     return "other";
@@ -151,21 +142,11 @@ export default function DocumentsManager() {
 
     const searchMatch = search
       ? (
-          doc.file_name
-            ?.toLowerCase()
-            .includes(search.toLowerCase()) ||
-          doc.title
-            ?.toLowerCase()
-            .includes(search.toLowerCase()) ||
-          doc.type
-            ?.toLowerCase()
-            .includes(search.toLowerCase()) ||
-          doc.ocr_text
-            ?.toLowerCase()
-            .includes(search.toLowerCase()) ||
-          house?.name
-            ?.toLowerCase()
-            .includes(search.toLowerCase())
+          doc.file_name?.toLowerCase().includes(search.toLowerCase()) ||
+          doc.title?.toLowerCase().includes(search.toLowerCase()) ||
+          doc.type?.toLowerCase().includes(search.toLowerCase()) ||
+          doc.ocr_text?.toLowerCase().includes(search.toLowerCase()) ||
+          house?.name?.toLowerCase().includes(search.toLowerCase())
         )
       : true;
 
@@ -185,9 +166,6 @@ export default function DocumentsManager() {
     );
   });
 
-  // =========================
-  // TYPES
-  // =========================
   const types = [
     "rechnung",
     "vertrag",
@@ -201,39 +179,34 @@ export default function DocumentsManager() {
 
   return (
     <>
-      {/* MOBILE HEADER */}
+      {/* =========================
+          MOBILE TOP BAR
+      ========================= */}
       {isMobile && (
         <div style={mobileTopBar}>
-          <button
-            onClick={() => setMobileSidebarOpen(true)}
-            style={menuBtn}
-          >
+          <button onClick={() => setMobileSidebarOpen(true)} style={menuBtn}>
             <Menu />
           </button>
 
           <h2 style={mobileTitle}>Dokumente</h2>
 
-          <button
-            onClick={() => setUploadOpen(true)}
-            style={uploadFabSmall}
-          >
+          <button onClick={() => setUploadOpen(true)} style={uploadFabSmall}>
             <UploadCloud size={18} />
           </button>
         </div>
       )}
 
+      {/* =========================
+          LAYOUT
+      ========================= */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: isMobile
-            ? "1fr"
-            : "260px 1fr",
-          gap: "24px",
-          padding: isMobile
-            ? "150px 16px 28px 16px"
-            : "28px",
+          gridTemplateColumns: isMobile ? "1fr" : "240px 1fr",
+          gap: "16px",
+          padding: isMobile ? "140px 12px 20px" : "18px",
           maxWidth: "1450px",
-          margin: "0 auto",
+          margin: "0 auto"
         }}
       >
         {/* =========================
@@ -241,25 +214,13 @@ export default function DocumentsManager() {
         ========================= */}
         {!isMobile && (
           <div style={sidebar}>
-            <h3 style={{ marginTop: 0, color: "#0A2540" }}>
-              Dokumente
-            </h3>
+            <h3 style={{ marginTop: 0 }}>Dokumente</h3>
 
-            <SidebarButton
-              active={sidebarView === "all"}
-              onClick={() => setSidebarView("all")}
-            >
-              <FileText size={16} />
+            <SidebarButton active={sidebarView === "all"} onClick={() => setSidebarView("all")}>
               Alle
             </SidebarButton>
 
-            <SidebarButton
-              active={sidebarView === "favorites"}
-              onClick={() =>
-                setSidebarView("favorites")
-              }
-            >
-              <Star size={16} />
+            <SidebarButton active={sidebarView === "favorites"} onClick={() => setSidebarView("favorites")}>
               Favoriten
             </SidebarButton>
 
@@ -271,7 +232,6 @@ export default function DocumentsManager() {
                 active={sidebarView === t}
                 onClick={() => setSidebarView(t)}
               >
-                <FilePlus2 size={16} />
                 {t}
               </SidebarButton>
             ))}
@@ -283,19 +243,18 @@ export default function DocumentsManager() {
                 key={h.id}
                 onClick={() => setSelectedHouse(h.id)}
                 style={{
-                  padding: 10,
-                  borderRadius: 12,
+                  padding: 8,
+                  borderRadius: 10,
                   cursor: "pointer",
                   background:
-                    selectedHouse === h.id
-                      ? "#eef6ff"
-                      : "transparent",
+                    selectedHouse === h.id ? "#eef6ff" : "transparent",
                   display: "flex",
                   gap: 8,
-                  alignItems: "center"
+                  alignItems: "center",
+                  fontSize: 13
                 }}
               >
-                <Home size={16} />
+                <Home size={14} />
                 {h.name}
               </div>
             ))}
@@ -303,56 +262,29 @@ export default function DocumentsManager() {
         )}
 
         {/* =========================
-            MAIN
+            MAIN CONTENT
         ========================= */}
         <div>
-          {/* HEADER */}
-          <div
-            style={{
-              textAlign: "center",
-              marginBottom: 24
-            }}
-          >
-            <UploadCloud size={34} />
-
-            <h1
-              style={{
-                margin: 0,
-                fontSize: 32,
-                fontWeight: 800,
-                color: "#0A2540"
-              }}
-            >
-              Dokumente
-            </h1>
-
-            <p style={{ color: "#64748b" }}>
-              Alle Dokumente verwalten,
-              filtern und durchsuchen
+          <div style={{ textAlign: "center", marginBottom: 14 }}>
+            <UploadCloud size={28} />
+            <h1 style={{ margin: 0, fontSize: 26 }}>Dokumente</h1>
+            <p style={{ color: "#64748b", fontSize: 13 }}>
+              Verwaltung & Suche
             </p>
           </div>
 
           <input
             placeholder="Suche..."
             value={search}
-            onChange={(e) =>
-              setSearch(e.target.value)
-            }
+            onChange={(e) => setSearch(e.target.value)}
             style={searchInput}
           />
 
           {loading ? (
             <p>Lade...</p>
           ) : filteredDocs.length === 0 ? (
-            <p
-              style={{
-                textAlign: "center",
-                fontSize: 18,
-                color: "#64748b",
-                marginTop: 60
-              }}
-            >
-              Keine Dokumente
+            <p style={{ textAlign: "center", marginTop: 40 }}>
+              Keine Dokumente gefunden
             </p>
           ) : (
             <div style={grid}>
@@ -363,24 +295,16 @@ export default function DocumentsManager() {
                 return (
                   <div key={doc.id} style={card}>
                     {fileType === "image" ? (
-                      <img
-                        src={doc.file_url}
-                        style={img}
-                      />
+                      <img src={doc.file_url} style={img} />
                     ) : (
                       <div style={placeholder}>
-                        <FileText size={40} />
+                        <FileText size={28} />
                       </div>
                     )}
 
-                    <b>{doc.file_name}</b>
+                    <b style={{ fontSize: 12 }}>{doc.file_name}</b>
 
-                    <p
-                      style={{
-                        fontSize: 12,
-                        color: "#666"
-                      }}
-                    >
+                    <p style={{ fontSize: 11, color: "#666" }}>
                       {house?.name}
                     </p>
 
@@ -394,9 +318,7 @@ export default function DocumentsManager() {
                       </a>
 
                       <button
-                        onClick={() =>
-                          deleteDocument(doc)
-                        }
+                        onClick={() => deleteDocument(doc)}
                         style={btnDanger}
                       >
                         Löschen
@@ -411,11 +333,8 @@ export default function DocumentsManager() {
       </div>
 
       {/* FLOAT BUTTON */}
-      <button
-        onClick={() => setUploadOpen(true)}
-        style={fab}
-      >
-        <UploadCloud />
+      <button onClick={() => setUploadOpen(true)} style={fab}>
+        <UploadCloud size={22} />
       </button>
 
       <UploadDocumentModal
@@ -424,15 +343,11 @@ export default function DocumentsManager() {
         onUploaded={loadDocuments}
       />
 
-      {/* =========================
-          MOBILE SIDEBAR
-      ========================= */}
+      {/* MOBILE SIDEBAR */}
       {isMobile && mobileSidebarOpen && (
         <div
           style={overlay}
-          onClick={() =>
-            setMobileSidebarOpen(false)
-          }
+          onClick={() => setMobileSidebarOpen(false)}
         >
           <div
             style={mobileSidebar}
@@ -442,38 +357,24 @@ export default function DocumentsManager() {
 
             <SidebarButton
               active={sidebarView === "all"}
-              onClick={() => {
-                setSidebarView("all");
-                setMobileSidebarOpen(false);
-              }}
+              onClick={() => setSidebarView("all")}
             >
-              <FileText size={16} />
               Alle
             </SidebarButton>
 
             <SidebarButton
               active={sidebarView === "favorites"}
-              onClick={() => {
-                setSidebarView("favorites");
-                setMobileSidebarOpen(false);
-              }}
+              onClick={() => setSidebarView("favorites")}
             >
-              <Star size={16} />
               Favoriten
             </SidebarButton>
-
-            <div style={divider} />
 
             {types.map((t) => (
               <SidebarButton
                 key={t}
                 active={sidebarView === t}
-                onClick={() => {
-                  setSidebarView(t);
-                  setMobileSidebarOpen(false);
-                }}
+                onClick={() => setSidebarView(t)}
               >
-                <Settings size={16} />
                 {t}
               </SidebarButton>
             ))}
@@ -485,32 +386,26 @@ export default function DocumentsManager() {
 }
 
 // =========================
-// UI COMPONENTS
+// SIDEBAR BUTTON
 // =========================
-
-function SidebarButton({
-  children,
-  active,
-  onClick
-}) {
+function SidebarButton({ children, active, onClick }) {
   return (
     <button
       onClick={onClick}
       style={{
         width: "100%",
         textAlign: "left",
-        padding: 10,
-        borderRadius: 12,
+        padding: 8,
+        borderRadius: 10,
         border: "none",
         marginBottom: 6,
-        background: active
-          ? "#0A2540"
-          : "transparent",
+        background: active ? "#0A2540" : "transparent",
         color: active ? "white" : "#040c14",
         display: "flex",
         gap: 8,
         alignItems: "center",
         cursor: "pointer",
+        fontSize: 13
       }}
     >
       {children}
@@ -519,99 +414,97 @@ function SidebarButton({
 }
 
 // =========================
-// STYLES
+// STYLES (kompakter)
 // =========================
 
 const sidebar = {
   background: "white",
-  borderRadius: 22,
-  padding: 22,
-  border: "1px solid #edf0f2",
-  boxShadow: "0 8px 24px rgba(0,0,0,0.05)",
+  borderRadius: 16,
+  padding: 14,
+  border: "1px solid #edf0f2"
 };
 
 const divider = {
   height: 1,
   background: "#eee",
-  margin: "14px 0",
+  margin: "10px 0"
 };
 
 const searchInput = {
   width: "100%",
-  padding: 12,
-  borderRadius: 12,
+  padding: 10,
+  borderRadius: 10,
   border: "1px solid #ddd",
-  marginBottom: 16,
-  boxSizing: "border-box",
+  marginBottom: 12
 };
 
+/* 🔥 MEHR ITEMS PRO ZEILE */
 const grid = {
   display: "grid",
-  gridTemplateColumns:
-    "repeat(auto-fill,minmax(260px,1fr))",
-  gap: 16,
+  gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
+  gap: 10
 };
 
 const card = {
   background: "white",
-  borderRadius: 16,
-  padding: 12,
+  borderRadius: 14,
+  padding: 10,
   border: "1px solid #e2e8f0",
-  boxShadow: "0 6px 18px rgba(0,0,0,0.04)",
+  boxShadow: "0 3px 10px rgba(0,0,0,0.04)"
 };
 
 const img = {
   width: "100%",
-  height: 160,
+  height: 95,
   objectFit: "cover",
-  borderRadius: 12,
-  display: "block",
+  borderRadius: 10
 };
 
 const placeholder = {
-  height: 160,
+  height: 95,
   display: "flex",
   alignItems: "center",
-  justifyContent: "center",
+  justifyContent: "center"
 };
 
 const btnRow = {
   display: "flex",
-  gap: 8,
-  marginTop: 10,
+  gap: 6,
+  marginTop: 8
 };
 
 const btn = {
   flex: 1,
-  padding: 8,
+  padding: 6,
+  fontSize: 11,
   textAlign: "center",
-  borderRadius: 10,
+  borderRadius: 8,
   background: "#0A2540",
   color: "white",
-  textDecoration: "none",
+  textDecoration: "none"
 };
 
 const btnDanger = {
   flex: 1,
-  padding: 8,
-  borderRadius: 10,
+  padding: 6,
+  fontSize: 11,
+  borderRadius: 8,
   background: "#ef4444",
   color: "white",
-  border: "none",
+  border: "none"
 };
 
 const fab = {
   position: "fixed",
-  bottom: 24,
-  right: 24,
-  width: 64,
-  height: 64,
+  bottom: 18,
+  right: 18,
+  width: 54,
+  height: 54,
   borderRadius: "50%",
   background: "#040f1a",
   color: "white",
   border: "none",
-  boxShadow: "0 6px 18px rgba(0,0,0,0.15)",
-  zIndex: 9999,
+  zIndex: 9999
 };
 
 const overlay = {
@@ -619,16 +512,14 @@ const overlay = {
   inset: 0,
   background: "rgba(0,0,0,0.4)",
   display: "flex",
-  zIndex: 10000,
+  zIndex: 10000
 };
 
 const mobileSidebar = {
-  width: 280,
+  width: 260,
   background: "white",
   height: "100%",
-  padding: 16,
-  boxShadow: "4px 0 20px rgba(0,0,0,0.15)",
-  zIndex: 10001,
+  padding: 14
 };
 
 const mobileTopBar = {
@@ -636,42 +527,32 @@ const mobileTopBar = {
   top: 70,
   left: 0,
   right: 0,
-  height: 60,
+  height: 54,
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  padding: "0 16px",
+  padding: "0 12px",
   background: "white",
   borderBottom: "1px solid #eee",
-  zIndex: 9000,
-  boxSizing: "border-box",
+  zIndex: 9000
 };
 
 const mobileTitle = {
   margin: 0,
-  fontSize: 18,
-  fontWeight: 700,
-  color: "#030b13",
+  fontSize: 16,
+  fontWeight: 700
 };
 
 const menuBtn = {
   background: "none",
-  border: "none",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
+  border: "none"
 };
 
 const uploadFabSmall = {
   background: "#040e18",
   color: "white",
   border: "none",
-  borderRadius: 10,
-  width: 36,
-  height: 36,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
+  borderRadius: 8,
+  width: 34,
+  height: 34
 };
