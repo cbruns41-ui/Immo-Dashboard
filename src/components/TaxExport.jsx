@@ -22,13 +22,12 @@ import {
 export default function TaxExport() {
   const { houses = [], transactions = [] } = useImmo();
 
-  // =========================
-  // STATES
-  // =========================
-
   const currentYear = new Date().getFullYear();
   const today = new Date().toISOString().split("T")[0];
 
+  // =========================
+  // STATES
+  // =========================
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedHouse, setSelectedHouse] = useState("all");
   const [selectedApartment, setSelectedApartment] = useState("all");
@@ -47,6 +46,10 @@ export default function TaxExport() {
     houseId: houses.length > 0 ? houses[0].id : "",
     apartmentId: "",
   });
+
+  // Toggle für eingeklappte Bereiche
+  const [showNewEntry, setShowNewEntry] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
 
   // =========================
   // CAMERA STATES (Beleg-Foto)
@@ -82,7 +85,7 @@ export default function TaxExport() {
     }
   }, [newEntry.houseId, houses]);
 
-  // Kamera aufräumen beim Verlassen
+  // Kamera aufräumen
   useEffect(() => {
     return () => {
       if (cameraStream) {
@@ -92,13 +95,11 @@ export default function TaxExport() {
   }, [cameraStream]);
 
   // =========================
-  // CAMERA FUNKTIONEN (Beleg)
+  // CAMERA FUNKTIONEN
   // =========================
   const startCameraBeleg = async () => {
     try {
-      if (cameraStream) {
-        cameraStream.getTracks().forEach((t) => t.stop());
-      }
+      if (cameraStream) cameraStream.getTracks().forEach((t) => t.stop());
 
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" },
@@ -133,17 +134,14 @@ export default function TaxExport() {
   const takePhotoBeleg = () => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
-
     if (!video || !canvas) return;
 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0);
 
     const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
-
     setCapturedPhoto(dataUrl);
     stopCameraBeleg();
     runOCRBeleg(dataUrl);
@@ -161,7 +159,7 @@ export default function TaxExport() {
   };
 
   // =========================
-  // BELEG HOCHLADEN + BUCHUNG SPEICHERN
+  // BELEG + BUCHUNG SPEICHERN
   // =========================
   const saveWithBeleg = async () => {
     if (!capturedPhoto || !newEntry.houseId || !newEntry.amount || !newEntry.description.trim()) {
@@ -178,7 +176,6 @@ export default function TaxExport() {
 
       const blob = await (await fetch(capturedPhoto)).blob();
 
-      // 1. Foto in Storage hochladen
       const { error: uploadError } = await supabase.storage
         .from("documents")
         .upload(filePath, blob);
@@ -188,8 +185,7 @@ export default function TaxExport() {
       const { data: urlData } = supabase.storage.from("documents").getPublicUrl(filePath);
       const fileUrl = urlData.publicUrl;
 
-      // 2. Dokument in DB speichern (genau wie in Documents.js)
-      const { error: dbError } = await supabase.from("documents").insert({
+      await supabase.from("documents").insert({
         user_id: user.id,
         house_id: newEntry.houseId,
         apartment_id: newEntry.apartmentId || null,
@@ -201,9 +197,6 @@ export default function TaxExport() {
         mime_type: "image/jpeg",
       });
 
-      if (dbError) throw dbError;
-
-      // 3. Manuelle Buchung erstellen (wie bisher)
       const amountNum = Number(newEntry.amount);
       const entry = {
         id: `manual-${Date.now()}`,
@@ -218,10 +211,8 @@ export default function TaxExport() {
 
       setAddedEntries((prev) => [...prev, entry]);
 
-      // Erfolgsmeldung + Reset
-      alert("✅ Beleg gespeichert + Buchung zur Export-Vorschau hinzugefügt!");
+      alert("✅ Beleg gespeichert + Buchung hinzugefügt!");
 
-      // Formular zurücksetzen
       setNewEntry({
         date: today,
         type: "expense",
@@ -243,9 +234,6 @@ export default function TaxExport() {
     setUploadingBeleg(false);
   };
 
-  // =========================
-  // TYPE DETECTION & TITLE (aus Documents.js)
-  // =========================
   const autoDetectType = (text) => {
     const t = text.toLowerCase();
     if (t.includes("rechnung")) return "rechnung";
@@ -310,7 +298,7 @@ export default function TaxExport() {
   };
 
   // =========================
-  // ALLE TRANSAKTIONEN + FILTER
+  // FILTER + TRANSACTIONS
   // =========================
   const allTransactions = useMemo(() => [...transactions, ...addedEntries], [transactions, addedEntries]);
 
@@ -340,9 +328,6 @@ export default function TaxExport() {
 
   const balance = totalIncome - totalExpenses;
 
-  // =========================
-  // CSV EXPORT (unverändert)
-  // =========================
   const downloadCSV = () => {
     if (!displayedTransactions.length) {
       alert("Keine Daten gefunden.");
@@ -354,10 +339,9 @@ export default function TaxExport() {
     const rows = displayedTransactions.map((t) => {
       const houseObj = houses.find((h) => h.id === t.houseId);
       const house = houseObj?.name || "-";
-      const apartment =
-        t.apartmentId && houseObj
-          ? houseObj.apartments?.find((a) => a.id === t.apartmentId)?.name || "-"
-          : "-";
+      const apartment = t.apartmentId && houseObj
+        ? houseObj.apartments?.find((a) => a.id === t.apartmentId)?.name || "-"
+        : "-";
 
       return [
         t.date || "",
@@ -397,228 +381,231 @@ export default function TaxExport() {
           <p style={subtitle}>Steuerdaten exportieren & für Steuerberater vorbereiten</p>
         </div>
 
-        {/* NEUE BUCHUNG + BELEG-FOTO */}
-        <div style={card}>
-          <div style={cardTop}>
-            <div style={iconWrap}>
-              <Plus size={24} />
-            </div>
-            <div>
-              <div style={cardTitle}>Neue Buchung hinzufügen</div>
-              <div style={cardSubtitle}>Kosten, Einnahmen, Beschreibung + optional Beleg-Foto</div>
-            </div>
-          </div>
+        {/* NEUE BUCHUNG – ZUGEKLAPPT */}
+        <button onClick={() => setShowNewEntry(!showNewEntry)} style={toggleBtn}>
+          <Plus size={20} />
+          {showNewEntry ? "Neue Buchung schließen" : "Neue Buchung hinzufügen"}
+        </button>
 
-          {/* Formular-Grid */}
-          <div style={addFormGrid}>
-            {/* Haus */}
-            <div style={field}>
-              <Building2 size={18} />
-              <select value={newEntry.houseId} onChange={handleNewEntryChange("houseId")} style={input}>
-                {houses.map((house) => (
-                  <option key={house.id} value={house.id}>
-                    {house.name}
-                  </option>
-                ))}
-              </select>
+        {showNewEntry && (
+          <div style={card}>
+            <div style={cardTop}>
+              <div style={iconWrap}>
+                <Plus size={24} />
+              </div>
+              <div>
+                <div style={cardTitle}>Neue Buchung hinzufügen</div>
+                <div style={cardSubtitle}>Kosten, Einnahmen, Beschreibung + optional Beleg-Foto</div>
+              </div>
             </div>
 
-            {/* Wohnung */}
-            <div style={field}>
-              <Building2 size={18} />
-              <select value={newEntry.apartmentId} onChange={handleNewEntryChange("apartmentId")} style={input}>
-                <option value="">Keine spezifische Wohnung</option>
-                {(houses.find((h) => h.id === newEntry.houseId)?.apartments || []).map((apt) => (
-                  <option key={apt.id} value={apt.id}>
-                    {apt.name}
-                  </option>
-                ))}
-              </select>
+            <div style={addFormGrid}>
+              <div style={field}>
+                <Building2 size={18} />
+                <select value={newEntry.houseId} onChange={handleNewEntryChange("houseId")} style={input}>
+                  {houses.map((house) => (
+                    <option key={house.id} value={house.id}>
+                      {house.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={field}>
+                <Building2 size={18} />
+                <select value={newEntry.apartmentId} onChange={handleNewEntryChange("apartmentId")} style={input}>
+                  <option value="">Keine spezifische Wohnung</option>
+                  {(houses.find((h) => h.id === newEntry.houseId)?.apartments || []).map((apt) => (
+                    <option key={apt.id} value={apt.id}>
+                      {apt.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={field}>
+                <Calendar size={18} />
+                <input type="date" value={newEntry.date} onChange={handleNewEntryChange("date")} style={input} />
+              </div>
+
+              <div style={field}>
+                <Receipt size={18} />
+                <select value={newEntry.type} onChange={handleNewEntryChange("type")} style={input}>
+                  <option value="income">Einnahme</option>
+                  <option value="expense">Ausgabe</option>
+                </select>
+              </div>
+
+              <div style={field}>
+                <Euro size={18} />
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  value={newEntry.amount}
+                  onChange={handleNewEntryChange("amount")}
+                  style={input}
+                />
+              </div>
+
+              <div style={field}>
+                <FileText size={18} />
+                <input
+                  type="text"
+                  placeholder="Kategorie"
+                  value={newEntry.category}
+                  onChange={handleNewEntryChange("category")}
+                  style={input}
+                />
+              </div>
             </div>
 
-            {/* Datum */}
-            <div style={field}>
-              <Calendar size={18} />
-              <input type="date" value={newEntry.date} onChange={handleNewEntryChange("date")} style={input} />
-            </div>
-
-            {/* Typ */}
-            <div style={field}>
-              <Receipt size={18} />
-              <select value={newEntry.type} onChange={handleNewEntryChange("type")} style={input}>
-                <option value="income">Einnahme</option>
-                <option value="expense">Ausgabe</option>
-              </select>
-            </div>
-
-            {/* Betrag */}
-            <div style={field}>
-              <Euro size={18} />
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                value={newEntry.amount}
-                onChange={handleNewEntryChange("amount")}
-                style={input}
-              />
-            </div>
-
-            {/* Kategorie */}
-            <div style={field}>
+            <div style={{ ...field, marginTop: 14 }}>
               <FileText size={18} />
               <input
                 type="text"
-                placeholder="Kategorie"
-                value={newEntry.category}
-                onChange={handleNewEntryChange("category")}
-                style={input}
+                placeholder="Beschreibung der Buchung..."
+                value={newEntry.description}
+                onChange={handleNewEntryChange("description")}
+                style={{ ...input, flex: 1 }}
               />
             </div>
-          </div>
 
-          {/* Beschreibung */}
-          <div style={{ ...field, marginTop: 14 }}>
-            <FileText size={18} />
-            <input
-              type="text"
-              placeholder="Beschreibung der Buchung..."
-              value={newEntry.description}
-              onChange={handleNewEntryChange("description")}
-              style={{ ...input, flex: 1 }}
-            />
-          </div>
-
-          {/* BELEG-FOTO BEREICH */}
-          <div style={{ marginTop: 24, borderTop: "1px dashed #e2e8f0", paddingTop: 20 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-              <Camera size={20} />
-              <strong>Beleg-Foto (optional)</strong>
-            </div>
-
-            {!isCameraActive && !capturedPhoto && (
-              <button onClick={startCameraBeleg} style={cameraBtn}>
-                📸 Beleg jetzt fotografieren
-              </button>
-            )}
-
-            {/* KAMERA LIVE */}
-            {isCameraActive && (
-              <div>
-                <video ref={videoRef} autoPlay playsInline style={videoStyle} />
-                <button onClick={takePhotoBeleg} style={photoBtn}>
-                  Foto aufnehmen
-                </button>
+            {/* BELEG-FOTO BEREICH */}
+            <div style={{ marginTop: 24, borderTop: "1px dashed #e2e8f0", paddingTop: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <Camera size={20} />
+                <strong>Beleg-Foto (optional)</strong>
               </div>
-            )}
 
-            {/* FOTO VORSCHAU + OCR */}
-            {capturedPhoto && (
-              <div>
-                <img src={capturedPhoto} alt="Beleg" style={photoPreview} />
-                {ocrLoadingBeleg ? (
-                  <p style={{ textAlign: "center", color: "#64748b" }}>OCR läuft...</p>
-                ) : (
-                  <pre style={ocrBox}>{ocrTextBeleg || "Kein Text erkannt"}</pre>
-                )}
+              {!isCameraActive && !capturedPhoto && (
+                <button onClick={startCameraBeleg} style={cameraBtn}>
+                  📸 Beleg jetzt fotografieren
+                </button>
+              )}
 
-                <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
-                  <button onClick={saveWithBeleg} disabled={uploadingBeleg} style={saveWithBelegBtn}>
-                    {uploadingBeleg ? "Speichert..." : "Beleg speichern + Buchung hinzufügen"}
-                  </button>
-                  <button onClick={() => { setCapturedPhoto(null); setOcrTextBeleg(""); }} style={secondaryBtn}>
-                    Neues Foto
+              {isCameraActive && (
+                <div>
+                  <video ref={videoRef} autoPlay playsInline style={videoStyle} />
+                  <button onClick={takePhotoBeleg} style={photoBtn}>
+                    Foto aufnehmen
                   </button>
                 </div>
+              )}
+
+              {capturedPhoto && (
+                <div>
+                  <img src={capturedPhoto} alt="Beleg" style={photoPreview} />
+                  {ocrLoadingBeleg ? (
+                    <p style={{ textAlign: "center", color: "#64748b" }}>OCR läuft...</p>
+                  ) : (
+                    <pre style={ocrBox}>{ocrTextBeleg || "Kein Text erkannt"}</pre>
+                  )}
+
+                  <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+                    <button onClick={saveWithBeleg} disabled={uploadingBeleg} style={saveWithBelegBtn}>
+                      {uploadingBeleg ? "Speichert..." : "Beleg speichern + Buchung hinzufügen"}
+                    </button>
+                    <button onClick={() => { setCapturedPhoto(null); setOcrTextBeleg(""); }} style={secondaryBtn}>
+                      Neues Foto
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button
+              style={{ ...downloadBtn, width: "100%", marginTop: 24, background: "#334155" }}
+              onClick={handleAddEntry}
+            >
+              <Plus size={16} />
+              Nur Buchung speichern (ohne Foto)
+            </button>
+          </div>
+        )}
+
+        {/* EXPORT FILTER – ZUGEKLAPPT */}
+        <button onClick={() => setShowFilter(!showFilter)} style={toggleBtn}>
+          <Filter size={20} />
+          {showFilter ? "Filter schließen" : "Export Filter"}
+        </button>
+
+        {showFilter && (
+          <div style={card}>
+            <div style={cardTop}>
+              <div style={iconWrap}>
+                <Filter size={24} />
               </div>
-            )}
-          </div>
-
-          {/* FALLBACK: Normale Buchung ohne Foto */}
-          <button
-            style={{ ...downloadBtn, width: "100%", marginTop: 24, background: "#334155" }}
-            onClick={handleAddEntry}
-          >
-            <Plus size={16} />
-            Nur Buchung speichern (ohne Foto)
-          </button>
-        </div>
-
-        {/* FILTER CARD (unverändert) */}
-        <div style={card}>
-          <div style={cardTop}>
-            <div style={iconWrap}>
-              <Filter size={24} />
-            </div>
-            <div>
-              <div style={cardTitle}>Export Filter</div>
-              <div style={cardSubtitle}>Zeitraum, Haus, Wohnung & Typ auswählen</div>
-            </div>
-          </div>
-
-          <div style={filterGrid}>
-            <div style={field}>
-              <Calendar size={18} />
-              <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} style={input}>
-                {[2023, 2024, 2025, 2026, 2027].map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <div style={cardTitle}>Export Filter</div>
+                <div style={cardSubtitle}>Zeitraum, Haus, Wohnung & Typ auswählen</div>
+              </div>
             </div>
 
-            <div style={field}>
-              <Building2 size={18} />
-              <select value={selectedHouse} onChange={(e) => setSelectedHouse(e.target.value)} style={input}>
-                <option value="all">Alle Häuser</option>
-                {houses.map((house) => (
-                  <option key={house.id} value={house.id}>
-                    {house.name}
-                  </option>
-                ))}
-              </select>
+            <div style={filterGrid}>
+              <div style={field}>
+                <Calendar size={18} />
+                <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} style={input}>
+                  {[2023, 2024, 2025, 2026, 2027].map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={field}>
+                <Building2 size={18} />
+                <select value={selectedHouse} onChange={(e) => setSelectedHouse(e.target.value)} style={input}>
+                  <option value="all">Alle Häuser</option>
+                  {houses.map((house) => (
+                    <option key={house.id} value={house.id}>
+                      {house.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={field}>
+                <Building2 size={18} />
+                <select value={selectedApartment} onChange={(e) => setSelectedApartment(e.target.value)} style={input}>
+                  <option value="all">Alle Wohnungen</option>
+                  {selectedHouse !== "all" &&
+                    houses
+                      .find((h) => h.id === selectedHouse)
+                      ?.apartments?.map((apt) => (
+                        <option key={apt.id} value={apt.id}>
+                          {apt.name}
+                        </option>
+                      ))}
+                </select>
+              </div>
+
+              <div style={field}>
+                <Receipt size={18} />
+                <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} style={input}>
+                  <option value="all">Alle Buchungen</option>
+                  <option value="income">Einnahmen</option>
+                  <option value="expense">Ausgaben</option>
+                </select>
+              </div>
             </div>
 
-            <div style={field}>
-              <Building2 size={18} />
-              <select value={selectedApartment} onChange={(e) => setSelectedApartment(e.target.value)} style={input}>
-                <option value="all">Alle Wohnungen</option>
-                {selectedHouse !== "all" &&
-                  houses
-                    .find((h) => h.id === selectedHouse)
-                    ?.apartments?.map((apt) => (
-                      <option key={apt.id} value={apt.id}>
-                        {apt.name}
-                      </option>
-                    ))}
-              </select>
-            </div>
-
-            <div style={field}>
-              <Receipt size={18} />
-              <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} style={input}>
-                <option value="all">Alle Buchungen</option>
-                <option value="income">Einnahmen</option>
-                <option value="expense">Ausgaben</option>
-              </select>
+            <div style={dateGrid}>
+              <div style={field}>
+                <Calendar size={18} />
+                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={input} />
+              </div>
+              <div style={field}>
+                <Calendar size={18} />
+                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={input} />
+              </div>
             </div>
           </div>
+        )}
 
-          <div style={dateGrid}>
-            <div style={field}>
-              <Calendar size={18} />
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={input} />
-            </div>
-            <div style={field}>
-              <Calendar size={18} />
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={input} />
-            </div>
-          </div>
-        </div>
-
-        {/* KPI, ACTIONS, TABLE – komplett unverändert */}
+        {/* KPI, ACTIONS, TABLE */}
         <div style={statsGrid}>
           <div style={statCard}>
             <div style={statIcon}><TrendingUp size={22} /></div>
@@ -736,38 +723,70 @@ export default function TaxExport() {
 }
 
 /* =========================
-   STYLE SYSTEM (erweitert um Kamera-Stile)
+   STYLE
 ========================= */
-
-const page = { minHeight: "100vh", padding: "24px 16px", background: "#f6f7fb", fontFamily: "Inter, Arial", color: "#0f172a" };
+const page = { minHeight: "100vh", padding: 20, background: "#f6f7fb", fontFamily: "Inter, Arial", color: "#0f172a" };
 const container = { maxWidth: 1100, margin: "0 auto" };
-const header = { marginBottom: 28, textAlign: "center" };
-const title = { fontSize: 36, fontWeight: 800, marginBottom: 8 };
+
+const header = { marginBottom: 30, textAlign: "center" };
+const title = { fontSize: 34, fontWeight: 800, marginBottom: 4 };
 const subtitle = { fontSize: 16, color: "#64748b" };
-const card = { background: "white", borderRadius: 22, padding: 24, border: "1px solid #e2e8f0", boxShadow: "0 8px 24px rgba(15,23,42,0.04)", marginBottom: 24 };
+
+const card = {
+  background: "white",
+  padding: 28,
+  borderRadius: 16,
+  border: "1px solid #e2e8f0",
+  boxShadow: "0 6px 18px rgba(0,0,0,0.04)",
+  marginBottom: 24,
+};
+
+const toggleBtn = {
+  width: "100%",
+  padding: 16,
+  background: "#0A2540",
+  color: "white",
+  border: "none",
+  borderRadius: 12,
+  fontSize: 17,
+  fontWeight: 600,
+  marginBottom: 16,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 10,
+  cursor: "pointer",
+};
+
 const cardTop = { display: "flex", alignItems: "center", gap: 16, marginBottom: 24 };
 const iconWrap = { width: 58, height: 58, borderRadius: 18, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" };
 const cardTitle = { fontSize: 18, fontWeight: 700, marginBottom: 4 };
 const cardSubtitle = { fontSize: 14, color: "#64748b" };
+
+const addFormGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 14 };
 const filterGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14, marginBottom: 14 };
 const dateGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14 };
-const addFormGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 14 };
+
 const field = { display: "flex", alignItems: "center", gap: 10 };
 const input = { width: "100%", padding: 14, borderRadius: 12, border: "1px solid #e2e8f0", background: "white", fontSize: 14 };
+
 const statsGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, marginBottom: 24 };
 const statCard = { background: "white", borderRadius: 20, padding: 20, border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 16, boxShadow: "0 6px 18px rgba(15,23,42,0.04)" };
 const statIcon = { width: 52, height: 52, borderRadius: 16, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" };
 const statLabel = { fontSize: 14, color: "#64748b", marginBottom: 4 };
 const statValue = { fontSize: 24, fontWeight: 800 };
+
 const actionsGrid = { display: "grid", gap: 16, marginBottom: 24 };
 const actionCard = { background: "white", borderRadius: 20, padding: 18, border: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, boxShadow: "0 6px 18px rgba(15,23,42,0.04)" };
 const actionLeft = { display: "flex", alignItems: "center", gap: 14 };
 const actionIcon = { width: 52, height: 52, borderRadius: 16, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" };
 const actionTitle = { fontSize: 17, fontWeight: 700, marginBottom: 4 };
 const actionDesc = { fontSize: 14, color: "#64748b" };
-const downloadBtn = { border: "none", background: "#0f172a", color: "white", borderRadius: 12, padding: "12px 18px", display: "flex", alignItems: "center", gap: 8, fontWeight: 700, cursor: "pointer" };
+
+const downloadBtn = { border: "none", background: "#0A2540", color: "white", borderRadius: 12, padding: "12px 18px", display: "flex", alignItems: "center", gap: 8, fontWeight: 700, cursor: "pointer" };
 const secondaryBtn = { border: "1px solid #e2e8f0", background: "white", color: "#0f172a", borderRadius: 12, padding: "12px 18px", display: "flex", alignItems: "center", gap: 8, fontWeight: 700, cursor: "pointer" };
 const disabledBtn = { border: "1px solid #e2e8f0", background: "#f8fafc", color: "#64748b", borderRadius: 12, padding: "12px 18px", fontWeight: 700 };
+
 const tableCard = { background: "white", borderRadius: 22, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 8px 24px rgba(15,23,42,0.04)" };
 const tableHeader = { padding: 20, borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" };
 const tableTitle = { margin: 0, fontSize: 20, fontWeight: 800 };
@@ -779,7 +798,7 @@ const td = { padding: 16, borderBottom: "1px solid #f1f5f9", fontSize: 14, color
 const tdBold = { padding: 16, borderBottom: "1px solid #f1f5f9", fontSize: 14, fontWeight: 700 };
 const deleteBtn = { background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center", justifyContent: "center" };
 
-// Neue Kamera-Stile
+// Kamera Stile
 const cameraBtn = { ...downloadBtn, background: "#0ea5e9", width: "100%" };
 const photoBtn = { ...downloadBtn, background: "#10b981", width: "100%", marginTop: 12 };
 const saveWithBelegBtn = { ...downloadBtn, background: "#10b981", flex: 1 };
