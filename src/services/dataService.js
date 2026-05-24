@@ -1,4 +1,5 @@
 import { supabase } from "../supabase/supabaseClient";
+import { saveOk, saveFail } from "./saveResult";
 
 export const dataService = {
   // =========================
@@ -22,11 +23,8 @@ export const dataService = {
   },
 
   async saveVermieter(userId, dataVermieter) {
-    if (!userId) return;
+    if (!userId) return saveOk();
 
-    // =========================
-    // PRÜFEN OB DATENSATZ EXISTIERT
-    // =========================
     const { data: existing, error: loadError } =
       await supabase
         .from("vermieter")
@@ -35,16 +33,9 @@ export const dataService = {
         .maybeSingle();
 
     if (loadError) {
-      console.error(
-        "❌ Vermieter laden:",
-        loadError
-      );
-      return;
+      return saveFail(loadError, "Vermieter laden");
     }
 
-    // =========================
-    // UPDATE
-    // =========================
     if (existing) {
       const { error } = await supabase
         .from("vermieter")
@@ -53,23 +44,9 @@ export const dataService = {
         })
         .eq("user_id", userId);
 
-      if (error) {
-        console.error(
-          "❌ Vermieter updaten:",
-          error
-        );
-      } else {
-        console.log(
-          "✅ Vermieter aktualisiert"
-        );
-      }
-
-      return;
+      return error ? saveFail(error, "Vermieter speichern") : saveOk();
     }
 
-    // =========================
-    // INSERT
-    // =========================
     const { error } = await supabase
       .from("vermieter")
       .insert({
@@ -77,16 +54,7 @@ export const dataService = {
         ...dataVermieter,
       });
 
-    if (error) {
-      console.error(
-        "❌ Vermieter speichern:",
-        error
-      );
-    } else {
-      console.log(
-        "✅ Vermieter gespeichert"
-      );
-    }
+    return error ? saveFail(error, "Vermieter speichern") : saveOk();
   },
 
   // =========================
@@ -109,7 +77,7 @@ export const dataService = {
   },
 
   async saveHouses(userId, houses) {
-    if (!userId) return;
+    if (!userId) return saveOk();
 
     // =========================
     // HOUSE IDS
@@ -130,10 +98,7 @@ export const dataService = {
       .eq("user_id", userId);
 
     if (loadHouseError) {
-      console.error(
-        "❌ Houses laden:",
-        loadHouseError
-      );
+      return saveFail(loadHouseError, "Häuser laden");
     }
 
     const dbHouseIds = (
@@ -160,25 +125,16 @@ export const dataService = {
         .in("house_id", deletedHouseIds);
 
       if (deleteApartmentsError) {
-        console.error(
-          "❌ Apartments löschen:",
-          deleteApartmentsError
-        );
+        return saveFail(deleteApartmentsError, "Wohnungen löschen");
       }
 
-      // Dann Häuser löschen
-      const {
-        error: deleteHouseError,
-      } = await supabase
+      const { error: deleteHouseError } = await supabase
         .from("houses")
         .delete()
         .in("id", deletedHouseIds);
 
       if (deleteHouseError) {
-        console.error(
-          "❌ Houses löschen:",
-          deleteHouseError
-        );
+        return saveFail(deleteHouseError, "Häuser löschen");
       }
     }
 
@@ -206,15 +162,9 @@ export const dataService = {
       );
 
     if (error) {
-      console.error(
-        "❌ Houses speichern:",
-        error
-      );
+      return saveFail(error, "Häuser speichern");
     }
 
-    // =========================
-    // APARTMENTS AUFBEREITEN
-    // =========================
     const apartments = houses.flatMap((h) =>
       (h.apartments || []).map((a) => ({
         id: String(a.id),
@@ -228,6 +178,8 @@ export const dataService = {
         warmmiete: a.warmmiete,
         deposit: a.deposit,
         notes: a.notes,
+        tenant_phone: a.tenant_phone || null,
+        tenant_email: a.tenant_email || null,
       }))
     );
 
@@ -243,10 +195,7 @@ export const dataService = {
       .eq("user_id", userId);
 
     if (loadApartmentError) {
-      console.error(
-        "❌ Apartments laden:",
-        loadApartmentError
-      );
+      return saveFail(loadApartmentError, "Wohnungen laden");
     }
 
     const currentApartmentIds =
@@ -277,30 +226,21 @@ export const dataService = {
         .in("id", deletedApartmentIds);
 
       if (deleteApartmentError) {
-        console.error(
-          "❌ Apartments löschen:",
-          deleteApartmentError
-        );
+        return saveFail(deleteApartmentError, "Wohnungen löschen");
       }
     }
 
-    // =========================
-    // APARTMENTS SPEICHERN
-    // =========================
     if (apartments.length > 0) {
-      const {
-        error: apartmentError,
-      } = await supabase
+      const { error: apartmentError } = await supabase
         .from("apartments")
         .upsert(apartments);
 
       if (apartmentError) {
-        console.error(
-          "❌ Apartments speichern:",
-          apartmentError
-        );
+        return saveFail(apartmentError, "Wohnungen speichern");
       }
     }
+
+    return saveOk();
   },
 
   // =========================
@@ -326,7 +266,7 @@ export const dataService = {
   },
 
   async saveAppointments(userId, items) {
-    if (!userId) return;
+    if (!userId) return saveOk();
 
     // =========================
     // AKTUELLE IDS
@@ -347,66 +287,40 @@ export const dataService = {
       .eq("user_id", userId);
 
     if (loadError) {
-      console.error(
-        "❌ Termine laden:",
-        loadError
-      );
+      return saveFail(loadError, "Termine laden");
     }
 
-    const dbIds = (
-      dbAppointments || []
-    ).map((a) => String(a.id));
+    const dbIds = (dbAppointments || []).map((a) => String(a.id));
+    const deletedIds = dbIds.filter((id) => !currentIds.includes(id));
 
-    // =========================
-    // GELÖSCHTE FINDEN
-    // =========================
-    const deletedIds = dbIds.filter(
-      (id) => !currentIds.includes(id)
-    );
-
-    // =========================
-    // GELÖSCHTE LÖSCHEN
-    // =========================
     if (deletedIds.length > 0) {
-      const { error: deleteError } =
-        await supabase
-          .from("appointments")
-          .delete()
-          .in("id", deletedIds);
+      const { error: deleteError } = await supabase
+        .from("appointments")
+        .delete()
+        .in("id", deletedIds);
 
       if (deleteError) {
-        console.error(
-          "❌ Termine löschen:",
-          deleteError
-        );
+        return saveFail(deleteError, "Termine löschen");
       }
     }
 
-    // =========================
-    // TERMINE SPEICHERN
-    // =========================
-    const { error } = await supabase
-      .from("appointments")
-      .upsert(
-        items.map((a) => ({
-          id: String(a.id),
-          user_id: userId,
-          house_id: a.house_id || null,
-          apartment_id:
-            a.apartment_id || null,
-          date: a.date,
-          time: a.time || "00:00",
-          description:
-            a.description || "",
-        }))
-      );
+    const { error } = await supabase.from("appointments").upsert(
+      items.map((a) => ({
+        id: String(a.id),
+        user_id: userId,
+        house_id: a.house_id || null,
+        apartment_id: a.apartment_id || null,
+        date: a.date,
+        time: a.time || "00:00",
+        description: a.description || "",
+        appointment_type: a.appointment_type || "other",
+        maintenance_interval_months: a.maintenance_interval_months
+          ? Number(a.maintenance_interval_months)
+          : null,
+      }))
+    );
 
-    if (error) {
-      console.error(
-        "❌ Termine speichern:",
-        error
-      );
-    }
+    return error ? saveFail(error, "Termine speichern") : saveOk();
   },
 
   // =========================
@@ -432,7 +346,7 @@ export const dataService = {
   },
 
   async saveTransactions(userId, items) {
-    if (!userId) return;
+    if (!userId) return saveOk();
 
     // =========================
     // AKTUELLE IDS
@@ -453,65 +367,102 @@ export const dataService = {
       .eq("user_id", userId);
 
     if (loadError) {
-      console.error(
-        "❌ Finanzen laden:",
-        loadError
-      );
+      return saveFail(loadError, "Buchungen laden");
     }
 
-    const dbIds = (
-      dbTransactions || []
-    ).map((t) => String(t.id));
+    const dbIds = (dbTransactions || []).map((t) => String(t.id));
+    const deletedIds = dbIds.filter((id) => !currentIds.includes(id));
 
-    // =========================
-    // GELÖSCHTE FINDEN
-    // =========================
-    const deletedIds = dbIds.filter(
-      (id) => !currentIds.includes(id)
-    );
-
-    // =========================
-    // GELÖSCHTE LÖSCHEN
-    // =========================
     if (deletedIds.length > 0) {
-      const { error: deleteError } =
-        await supabase
-          .from("transactions")
-          .delete()
-          .in("id", deletedIds);
+      const { error: deleteError } = await supabase
+        .from("transactions")
+        .delete()
+        .in("id", deletedIds);
 
       if (deleteError) {
-        console.error(
-          "❌ Finanzen löschen:",
-          deleteError
-        );
+        return saveFail(deleteError, "Buchungen löschen");
       }
     }
 
-    // =========================
-    // FINANZEN SPEICHERN
-    // =========================
-    const { error } = await supabase
-      .from("transactions")
-      .upsert(
-        items.map((t) => ({
-          id: String(t.id),
-          user_id: userId,
-          house_id: t.house_id || null,
-          apartment_id:
-            t.apartment_id || null,
-          date: t.date,
-          amount: t.amount,
-          type: t.type,
-          description: t.description,
-        }))
-      );
+    const { error } = await supabase.from("transactions").upsert(
+      items.map((t) => ({
+        id: String(t.id),
+        user_id: userId,
+        house_id: t.house_id || null,
+        apartment_id: t.apartment_id || null,
+        date: t.date,
+        amount: t.amount,
+        type: t.type,
+        description: t.description,
+      }))
+    );
+
+    return error ? saveFail(error, "Buchungen speichern") : saveOk();
+  },
+
+  // =========================
+  // APP-NEWSFEED
+  // =========================
+  async checkIsSiteAdmin(email) {
+    if (!email) return false;
+
+    const { data, error } = await supabase
+      .from("site_admins")
+      .select("email")
+      .ilike("email", email.trim())
+      .maybeSingle();
 
     if (error) {
-      console.error(
-        "❌ Finanzen speichern:",
-        error
-      );
+      console.warn("Admin-Check:", error.message);
+      return false;
     }
+
+    return !!data;
+  },
+
+  async getAppNews() {
+    const { data, error } = await supabase
+      .from("app_news")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("❌ News laden:", error);
+      throw error;
+    }
+
+    return data || [];
+  },
+
+  async createAppNews({ title, body }) {
+    const { data, error } = await supabase
+      .from("app_news")
+      .insert({ title, body })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async updateAppNews(id, { title, body }) {
+    const { data, error } = await supabase
+      .from("app_news")
+      .update({ title, body, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteAppNews(id) {
+    const { error } = await supabase
+      .from("app_news")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
   },
 };

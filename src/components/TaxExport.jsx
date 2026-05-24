@@ -1,5 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from "react";
+import { createWorker } from "tesseract.js";
 import { useImmo } from "../context/ImmoContext";
+import { useNotifications } from "../context/NotificationContext";
 import { supabase } from "../supabase/supabaseClient";
 
 import {
@@ -21,6 +23,8 @@ import {
 
 export default function TaxExport() {
   const { houses = [], transactions = [] } = useImmo();
+  const { error: notifyError, success: notifySuccess, warning: notifyWarning } =
+    useNotifications();
 
   const currentYear = new Date().getFullYear();
   const today = new Date().toISOString().split("T")[0];
@@ -119,7 +123,7 @@ export default function TaxExport() {
       }, 100);
     } catch (err) {
       console.error(err);
-      alert("Kamera konnte nicht gestartet werden. Bitte Berechtigung prüfen.");
+      notifyError("Kamera konnte nicht gestartet werden. Bitte Berechtigung prüfen.");
     }
   };
 
@@ -150,7 +154,9 @@ export default function TaxExport() {
   const runOCRBeleg = async (image) => {
     setOcrLoadingBeleg(true);
     try {
-      const result = await Tesseract.recognize(image, "deu+eng");
+      const worker = await createWorker("deu+eng");
+      const result = await worker.recognize(image);
+      await worker.terminate();
       setOcrTextBeleg(result.data.text || "");
     } catch (e) {
       console.error(e);
@@ -163,7 +169,7 @@ export default function TaxExport() {
   // =========================
   const saveWithBeleg = async () => {
     if (!capturedPhoto || !newEntry.houseId || !newEntry.amount || !newEntry.description.trim()) {
-      alert("Bitte Haus, Betrag, Beschreibung und Foto ausfüllen.");
+      notifyWarning("Bitte Haus, Betrag, Beschreibung und Foto ausfüllen.");
       return;
     }
 
@@ -211,7 +217,7 @@ export default function TaxExport() {
 
       setAddedEntries((prev) => [...prev, entry]);
 
-      alert("✅ Beleg gespeichert + Buchung hinzugefügt!");
+      notifySuccess("Beleg gespeichert und Buchung hinzugefügt");
 
       setNewEntry({
         date: today,
@@ -228,7 +234,7 @@ export default function TaxExport() {
       setIsCameraActive(false);
     } catch (e) {
       console.error(e);
-      alert("Fehler beim Speichern des Belegs.");
+      notifyError("Fehler beim Speichern des Belegs.");
     }
 
     setUploadingBeleg(false);
@@ -257,13 +263,13 @@ export default function TaxExport() {
 
   const handleAddEntry = () => {
     if (!newEntry.houseId || !newEntry.amount || !newEntry.description.trim()) {
-      alert("Bitte Haus, Betrag und Beschreibung ausfüllen.");
+      notifyWarning("Bitte Haus, Betrag und Beschreibung ausfüllen.");
       return;
     }
 
     const amountNum = Number(newEntry.amount);
     if (isNaN(amountNum) || amountNum <= 0) {
-      alert("Bitte einen gültigen Betrag eingeben.");
+      notifyWarning("Bitte einen gültigen Betrag eingeben.");
       return;
     }
 
@@ -290,7 +296,7 @@ export default function TaxExport() {
       apartmentId: "",
     });
 
-    alert("Buchung zur Export-Vorschau hinzugefügt!");
+    notifySuccess("Buchung zur Export-Vorschau hinzugefügt");
   };
 
   const handleDeleteManual = (id) => {
@@ -330,7 +336,7 @@ export default function TaxExport() {
 
   const downloadCSV = () => {
     if (!displayedTransactions.length) {
-      alert("Keine Daten gefunden.");
+      notifyWarning("Keine Daten gefunden.");
       return;
     }
 
@@ -723,85 +729,240 @@ export default function TaxExport() {
 }
 
 /* =========================
-   STYLE
+   STYLE – Gradient Design iOS/Android
 ========================= */
-const page = { minHeight: "100vh", padding: 20, background: "#f6f7fb", fontFamily: "Inter, Arial", color: "#0f172a" };
-const container = { maxWidth: 1100, margin: "0 auto" };
+const page = {
+  minHeight: "100vh",
+  padding: "20px 16px 100px",
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
+  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif",
+  color: "#0f172a"
+};
 
-const header = { marginBottom: 30, textAlign: "center" };
-const title = { fontSize: 34, fontWeight: 800, marginBottom: 4 };
-const subtitle = { fontSize: 16, color: "#64748b" };
+const container = { maxWidth: 1200, margin: "0 auto" };
+
+const header = { marginBottom: 32, textAlign: "center" };
+const title = {
+  fontSize: 32,
+  fontWeight: 800,
+  marginBottom: 8,
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
+  WebkitBackgroundClip: "text",
+  WebkitTextFillColor: "transparent",
+  backgroundClip: "text"
+};
+
+const subtitle = { fontSize: 16, color: "#64748b", fontWeight: 500 };
 
 const card = {
-  background: "white",
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
   padding: 28,
-  borderRadius: 16,
-  border: "1px solid #e2e8f0",
-  boxShadow: "0 6px 18px rgba(0,0,0,0.04)",
-  marginBottom: 24,
+  borderRadius: 20,
+  border: "1px solid rgba(255, 255, 255, 0.2)",
+  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+  marginBottom: 24
 };
 
 const toggleBtn = {
   width: "100%",
-  padding: 16,
-  background: "#0A2540",
+  padding: 18,
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
   color: "white",
   border: "none",
-  borderRadius: 12,
+  borderRadius: 16,
   fontSize: 17,
-  fontWeight: 600,
+  fontWeight: 800,
   marginBottom: 16,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  gap: 10,
+  gap: 12,
   cursor: "pointer",
+  boxShadow: "0 8px 24px rgba(59, 130, 246, 0.4)",
+  transition: "all 0.3s ease"
 };
 
 const cardTop = { display: "flex", alignItems: "center", gap: 16, marginBottom: 24 };
-const iconWrap = { width: 58, height: 58, borderRadius: 18, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" };
-const cardTitle = { fontSize: 18, fontWeight: 700, marginBottom: 4 };
-const cardSubtitle = { fontSize: 14, color: "#64748b" };
+const iconWrap = {
+  width: 58,
+  height: 58,
+  borderRadius: 18,
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "white",
+  boxShadow: "0 4px 16px rgba(59, 130, 246, 0.3)"
+};
+
+const cardTitle = { fontSize: 18, fontWeight: 800, marginBottom: 4, color: "#1e293b" };
+const cardSubtitle = { fontSize: 14, color: "#64748b", fontWeight: 500 };
 
 const addFormGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 14 };
 const filterGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14, marginBottom: 14 };
 const dateGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14 };
 
 const field = { display: "flex", alignItems: "center", gap: 10 };
-const input = { width: "100%", padding: 14, borderRadius: 12, border: "1px solid #e2e8f0", background: "white", fontSize: 14 };
+const input = {
+  width: "100%",
+  padding: 14,
+  borderRadius: 14,
+  border: "2px solid #e2e8f0",
+  background: "white",
+  fontSize: 16,
+  fontWeight: 500,
+  color: "#1e293b",
+  transition: "all 0.2s ease"
+};
 
 const statsGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, marginBottom: 24 };
-const statCard = { background: "white", borderRadius: 20, padding: 20, border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 16, boxShadow: "0 6px 18px rgba(15,23,42,0.04)" };
-const statIcon = { width: 52, height: 52, borderRadius: 16, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" };
-const statLabel = { fontSize: 14, color: "#64748b", marginBottom: 4 };
-const statValue = { fontSize: 24, fontWeight: 800 };
+const statCard = {
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  borderRadius: 20,
+  padding: 20,
+  border: "1px solid rgba(255, 255, 255, 0.2)",
+  display: "flex",
+  alignItems: "center",
+  gap: 16,
+  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)"
+};
+
+const statIcon = {
+  width: 52,
+  height: 52,
+  borderRadius: 16,
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "white",
+  boxShadow: "0 4px 16px rgba(59, 130, 246, 0.3)"
+};
+
+const statLabel = { fontSize: 14, color: "#64748b", marginBottom: 4, fontWeight: 600 };
+const statValue = { fontSize: 24, fontWeight: 800, color: "#1e293b" };
 
 const actionsGrid = { display: "grid", gap: 16, marginBottom: 24 };
-const actionCard = { background: "white", borderRadius: 20, padding: 18, border: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, boxShadow: "0 6px 18px rgba(15,23,42,0.04)" };
+const actionCard = {
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  borderRadius: 20,
+  padding: 18,
+  border: "1px solid rgba(255, 255, 255, 0.2)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 16,
+  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)"
+};
+
 const actionLeft = { display: "flex", alignItems: "center", gap: 14 };
-const actionIcon = { width: 52, height: 52, borderRadius: 16, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" };
-const actionTitle = { fontSize: 17, fontWeight: 700, marginBottom: 4 };
-const actionDesc = { fontSize: 14, color: "#64748b" };
+const actionIcon = {
+  width: 52,
+  height: 52,
+  borderRadius: 16,
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "white",
+  boxShadow: "0 4px 16px rgba(59, 130, 246, 0.3)"
+};
 
-const downloadBtn = { border: "none", background: "#0A2540", color: "white", borderRadius: 12, padding: "12px 18px", display: "flex", alignItems: "center", gap: 8, fontWeight: 700, cursor: "pointer" };
-const secondaryBtn = { border: "1px solid #e2e8f0", background: "white", color: "#0f172a", borderRadius: 12, padding: "12px 18px", display: "flex", alignItems: "center", gap: 8, fontWeight: 700, cursor: "pointer" };
-const disabledBtn = { border: "1px solid #e2e8f0", background: "#f8fafc", color: "#64748b", borderRadius: 12, padding: "12px 18px", fontWeight: 700 };
+const actionTitle = { fontSize: 17, fontWeight: 800, marginBottom: 4, color: "#1e293b" };
+const actionDesc = { fontSize: 14, color: "#64748b", fontWeight: 500 };
 
-const tableCard = { background: "white", borderRadius: 22, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 8px 24px rgba(15,23,42,0.04)" };
-const tableHeader = { padding: 20, borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" };
-const tableTitle = { margin: 0, fontSize: 20, fontWeight: 800 };
+const downloadBtn = {
+  border: "none",
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
+  color: "white",
+  borderRadius: 14,
+  padding: "12px 18px",
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  fontWeight: 800,
+  cursor: "pointer",
+  boxShadow: "0 4px 16px rgba(59, 130, 246, 0.3)",
+  transition: "all 0.2s ease"
+};
+
+const secondaryBtn = {
+  border: "2px solid #e2e8f0",
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  color: "#0f172a",
+  borderRadius: 14,
+  padding: "12px 18px",
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  fontWeight: 700,
+  cursor: "pointer",
+  transition: "all 0.2s ease"
+};
+
+const disabledBtn = {
+  border: "2px solid #e2e8f0",
+  background: "#f8fafc",
+  color: "#64748b",
+  borderRadius: 14,
+  padding: "12px 18px",
+  fontWeight: 700
+};
+
+const tableCard = {
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  borderRadius: 22,
+  border: "1px solid rgba(255, 255, 255, 0.2)",
+  overflow: "hidden",
+  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)"
+};
+
+const tableHeader = { padding: 20, borderBottom: "1px solid rgba(226, 232, 240, 0.5)", display: "flex", justifyContent: "space-between", alignItems: "center" };
+const tableTitle = { margin: 0, fontSize: 20, fontWeight: 800, color: "#1e293b" };
 const tableCount = { fontSize: 14, color: "#64748b", fontWeight: 600 };
 const tableWrap = { overflowX: "auto" };
 const table = { width: "100%", borderCollapse: "collapse" };
-const th = { textAlign: "left", padding: 16, background: "#f8fafc", borderBottom: "1px solid #e2e8f0", fontSize: 14, fontWeight: 700 };
-const td = { padding: 16, borderBottom: "1px solid #f1f5f9", fontSize: 14, color: "#334155" };
-const tdBold = { padding: 16, borderBottom: "1px solid #f1f5f9", fontSize: 14, fontWeight: 700 };
-const deleteBtn = { background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center", justifyContent: "center" };
+const th = { textAlign: "left", padding: 16, background: "rgba(248, 250, 252, 0.8)", borderBottom: "1px solid rgba(226, 232, 240, 0.5)", fontSize: 14, fontWeight: 800, color: "#1e293b" };
+const td = { padding: 16, borderBottom: "1px solid rgba(241, 245, 249, 0.5)", fontSize: 14, color: "#334155", fontWeight: 500 };
+const tdBold = { padding: 16, borderBottom: "1px solid rgba(241, 245, 249, 0.5)", fontSize: 14, fontWeight: 800, color: "#1e293b" };
+const deleteBtn = {
+  background: "transparent",
+  border: "none",
+  color: "#ef4444",
+  cursor: "pointer",
+  padding: "4px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  transition: "all 0.2s ease"
+};
 
 // Kamera Stile
-const cameraBtn = { ...downloadBtn, background: "#0ea5e9", width: "100%" };
-const photoBtn = { ...downloadBtn, background: "#10b981", width: "100%", marginTop: 12 };
-const saveWithBelegBtn = { ...downloadBtn, background: "#10b981", flex: 1 };
-const videoStyle = { width: "100%", borderRadius: 12, background: "#000", marginTop: 8 };
-const photoPreview = { width: "100%", borderRadius: 12, marginTop: 8 };
-const ocrBox = { whiteSpace: "pre-wrap", fontSize: 13, background: "#f8fafc", padding: 12, borderRadius: 10, marginTop: 12, maxHeight: 160, overflowY: "auto" };
+const cameraBtn = { ...downloadBtn, background: "linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%)", width: "100%" };
+const photoBtn = { ...downloadBtn, background: "linear-gradient(135deg, #10b981 0%, #34d399 100%)", width: "100%", marginTop: 12 };
+const saveWithBelegBtn = { ...downloadBtn, background: "linear-gradient(135deg, #10b981 0%, #34d399 100%)", flex: 1 };
+const videoStyle = { width: "100%", borderRadius: 14, background: "#000", marginTop: 8 };
+const photoPreview = { width: "100%", borderRadius: 14, marginTop: 8 };
+const ocrBox = {
+  whiteSpace: "pre-wrap",
+  fontSize: 13,
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  padding: 12,
+  borderRadius: 14,
+  marginTop: 12,
+  maxHeight: 160,
+  overflowY: "auto",
+  border: "1px solid rgba(255, 255, 255, 0.2)"
+};

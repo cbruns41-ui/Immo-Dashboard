@@ -9,6 +9,8 @@ import {
   FileText,
   Receipt,
   Settings as SettingsIcon,
+  Moon,
+  Sun,
 } from "lucide-react";
 
 import Dashboard from "./components/Dashboard";
@@ -23,8 +25,15 @@ import DocumentsManager from "./components/DocumentsManager";
 import TaxExport from "./components/TaxExport";
 
 import InstallButton from "./components/InstallButton.jsx";
+import { ThemeProvider, useTheme } from "./context/ThemeContext";
+import { NotificationProvider } from "./context/NotificationContext";
+import NotificationToast from "./components/NotificationToast";
+import { ImmoProvider } from "./context/ImmoContext";
+import Auth from "./auth/Auth";
 
-export default function App() {
+function AppContent({ isDemo = false, onDemo }) {
+  const { isDark, toggleTheme } = useTheme();
+  
   // 🚀 Dashboard direkt als Startseite
   const [currentPage, setCurrentPage] = useState("dashboard");
 
@@ -88,10 +97,35 @@ export default function App() {
   ];
 
   return (
-    <div style={page}>
+    <div style={{ ...page, background: isDark ? darkColors.background : lightColors.background }}>
+      {/* Theme Toggle */}
+      <button
+        onClick={toggleTheme}
+        style={{
+          position: "fixed",
+          top: 16,
+          right: 16,
+          zIndex: 10000,
+          width: 44,
+          height: 44,
+          borderRadius: "50%",
+          border: "none",
+          background: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          transition: "all 0.3s ease"
+        }}
+      >
+        {isDark ? <Sun size={20} color="#f1f5f9" /> : <Moon size={20} color="#0f172a" />}
+      </button>
+
       {/* Seiten */}
       <div style={content}>
-        {currentPage === "dashboard" && <Dashboard />}
+        {currentPage === "dashboard" && <Dashboard onNavigate={navigate} />}
         {currentPage === "houses" && <Houses />}
         {currentPage === "appointments" && <Appointments />}
         {currentPage === "finanzen" && <Finances />}
@@ -104,7 +138,7 @@ export default function App() {
       </div>
 
       {/* 🔥 Moderne Bottom Navigation */}
-      <div style={bottomNavWrapper}>
+      <div style={{ ...bottomNavWrapper, background: isDark ? "rgba(30, 41, 59, 0.8)" : "rgba(255,255,255,0.72)" }}>
         <div style={bottomNav}>
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -114,11 +148,11 @@ export default function App() {
               <button
                 key={item.id}
                 onClick={() => navigate(item.id)}
-                style={isActive ? activeNavItem : navItem}
+                style={isActive ? { ...activeNavItem, background: isDark ? "rgba(59, 130, 246, 0.2)" : "rgba(15,23,42,0.06)", color: isDark ? "#f1f5f9" : "#0f172a" } : { ...navItem, color: isDark ? "#94a3b8" : "#64748b" }}
               >
                 <Icon size={20} strokeWidth={2.3} />
 
-                <span style={navLabel}>
+                <span style={{ ...navLabel, color: isDark ? "#f1f5f9" : "#0f172a" }}>
                   {item.label}
                 </span>
               </button>
@@ -133,14 +167,39 @@ export default function App() {
   );
 }
 
+export default function App() {
+  const [isDemo, setIsDemo] = useState(false);
+
+  return (
+    <ThemeProvider>
+      <NotificationProvider>
+        <Auth>
+          {(authProps) => (
+            <ImmoProvider isDemo={authProps.isDemo || isDemo}>
+              <AppContent isDemo={authProps.isDemo || isDemo} onDemo={authProps.onDemo} />
+              <NotificationToast />
+            </ImmoProvider>
+          )}
+        </Auth>
+      </NotificationProvider>
+    </ThemeProvider>
+  );
+}
+
 /* =========================
    MODERN APP STYLES
 ========================= */
 
+const lightColors = {
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
+};
+
+const darkColors = {
+  background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
+};
+
 const page = {
   minHeight: "100vh",
-  background:
-    "linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%)",
   fontFamily:
     "Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
   color: "#0f172a",

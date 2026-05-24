@@ -5,6 +5,7 @@ import {
   Banknote,
   ArrowDownRight,
   ArrowUpRight,
+  Download,
 } from "lucide-react";
 
 export default function Cashflow() {
@@ -50,13 +51,46 @@ export default function Cashflow() {
     totalRealCosts -
     manualExpense;
 
+  // =========================
+  // CSV EXPORT
+  // =========================
+  const exportToCSV = () => {
+    const data = [
+      ["Kategorie", "Betrag (€)", "Typ"],
+      ["Warmmiete (jährlich)", incomeWarmmiete.toFixed(2), "Einnahme"],
+      ["Kaltmiete (jährlich)", incomeKaltmiete.toFixed(2), "Einnahme"],
+      ["Manuelle Einnahmen", manualIncome.toFixed(2), "Einnahme"],
+      ["Darlehen (jährlich)", expenseLoan.toFixed(2), "Ausgabe"],
+      ["Nebenkosten (jährlich)", totalRealCosts.toFixed(2), "Ausgabe"],
+      ["Manuelle Ausgaben", manualExpense.toFixed(2), "Ausgabe"],
+      ["CASHFLOW", cashflow.toFixed(2), "Gesamt"]
+    ];
+
+    const csvContent = data.map(row => row.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `cashflow_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div style={page}>
       <div style={container}>
         {/* HEADER */}
         <div style={header}>
-          <h1 style={title}>Cashflow</h1>
-          <p style={subtitle}>Realistische Vermieter-Übersicht</p>
+          <div>
+            <h1 style={title}>Cashflow</h1>
+            <p style={subtitle}>Realistische Vermieter-Übersicht</p>
+          </div>
+          <button onClick={exportToCSV} style={exportBtn}>
+            <Download size={20} />
+            CSV Export
+          </button>
         </div>
 
         {/* KPI CARDS */}
@@ -146,39 +180,120 @@ export default function Cashflow() {
 }
 
 /* =========================
-   SAAS STYLE
+   SAAS STYLE – Gradient Design iOS/Android
 ========================= */
-const page = { minHeight: "100vh", padding: 24, background: "#f6f7fb", fontFamily: "Inter, Arial", color: "#0f172a" };
-const container = { maxWidth: 1100, margin: "0 auto" };
-
-const header = { marginBottom: 40, textAlign: "center" };
-const title = { fontSize: 34, fontWeight: 800, marginBottom: 4 };
-const subtitle = { fontSize: 16, color: "#64748b" };
-
-const grid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 };
-
-const kpiCard = {
-  background: "white",
-  padding: 24,
-  borderRadius: 16,
-  border: "1px solid #e2e8f0",
-  boxShadow: "0 6px 18px rgba(0,0,0,0.04)",
-  display: "flex",
-  alignItems: "center",
-  gap: 20,
+const page = {
+  minHeight: "100vh",
+  padding: "20px 16px 100px",
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
+  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif",
+  color: "#0f172a"
 };
 
-const iconBox = { width: 56, height: 56, borderRadius: 12, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 };
-const kpiContent = { flex: 1 };
-const bigNumber = { fontSize: 32, fontWeight: 700, lineHeight: 1, color: "#0f172a" };
-const label = { fontSize: 14, fontWeight: 500, color: "#64748b", marginTop: 4 };
+const container = {
+  maxWidth: 1200,
+  margin: "0 auto"
+};
+
+const header = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 32
+};
+
+const exportBtn = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  padding: "12px 20px",
+  borderRadius: 14,
+  border: "none",
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
+  color: "white",
+  fontWeight: 800,
+  cursor: "pointer",
+  boxShadow: "0 4px 16px rgba(59, 130, 246, 0.3)",
+  transition: "all 0.2s ease"
+};
+
+const title = {
+  fontSize: 32,
+  fontWeight: 800,
+  marginBottom: 8,
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
+  WebkitBackgroundClip: "text",
+  WebkitTextFillColor: "transparent",
+  backgroundClip: "text"
+};
+
+const subtitle = {
+  fontSize: 16,
+  color: "#64748b",
+  fontWeight: 500
+};
+
+const grid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+  gap: 16
+};
+
+const kpiCard = {
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  padding: 24,
+  borderRadius: 20,
+  border: "1px solid rgba(255, 255, 255, 0.2)",
+  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+  display: "flex",
+  alignItems: "center",
+  gap: 16,
+  transition: "all 0.3s ease"
+};
+
+const iconBox = {
+  width: 56,
+  height: 56,
+  borderRadius: 14,
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+  color: "white",
+  boxShadow: "0 4px 16px rgba(59, 130, 246, 0.3)"
+};
+
+const kpiContent = {
+  flex: 1
+};
+
+const bigNumber = {
+  fontSize: 28,
+  fontWeight: 800,
+  color: "#0f172a",
+  lineHeight: 1
+};
+
+const label = {
+  fontSize: 13,
+  fontWeight: 600,
+  color: "#64748b",
+  marginTop: 4,
+  textTransform: "uppercase",
+  letterSpacing: 0.5
+};
 
 const card = {
-  background: "white",
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
   padding: 28,
-  borderRadius: 16,
-  border: "1px solid #e2e8f0",
-  boxShadow: "0 6px 18px rgba(0,0,0,0.04)",
+  borderRadius: 20,
+  border: "1px solid rgba(255, 255, 255, 0.2)",
+  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)"
 };
 
 const detailRow = {
@@ -186,29 +301,38 @@ const detailRow = {
   justifyContent: "space-between",
   padding: "14px 0",
   borderBottom: "1px solid #e2e8f0",
-  fontSize: 16,
+  fontSize: 16
 };
 
-const green = { color: "#16a34a", fontWeight: 600 };
-const red = { color: "#dc2626", fontWeight: 600 };
+const green = {
+  color: "#16a34a",
+  fontWeight: 600
+};
+
+const red = {
+  color: "#dc2626",
+  fontWeight: 600
+};
 
 const nettoRow = {
-  borderTop: "2px solid #0f172a",
+  borderTop: "2px solid #3b82f6",
   paddingTop: 24,
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
   fontSize: 22,
-  fontWeight: 700,
+  fontWeight: 700
 };
 
 const detailsBtn = {
   padding: "14px 32px",
-  background: "#030c14",
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
   color: "white",
   border: "none",
-  borderRadius: 12,
+  borderRadius: 14,
   fontSize: 16,
-  fontWeight: 600,
-  boxShadow: "0 6px 20px rgba(10, 37, 64, 0.25)",
+  fontWeight: 700,
+  boxShadow: "0 4px 16px rgba(59, 130, 246, 0.3)",
+  cursor: "pointer",
+  transition: "all 0.3s ease"
 };

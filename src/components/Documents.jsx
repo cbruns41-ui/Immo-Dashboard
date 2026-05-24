@@ -1,10 +1,14 @@
 import { useRef, useState, useEffect } from "react";
+import { createWorker } from "tesseract.js";
 import { supabase } from "../supabase/supabaseClient";
 import { useImmo } from "../context/ImmoContext";
+import { useNotifications } from "../context/NotificationContext";
 import { Camera, FileText } from "lucide-react";
 
 export default function Documents() {
   const { houses } = useImmo();
+  const { error: notifyError, success: notifySuccess, warning: notifyWarning } =
+    useNotifications();
 
   const [selectedHouseId, setSelectedHouseId] = useState("");
   const [selectedApartmentId, setSelectedApartmentId] = useState("");
@@ -50,7 +54,7 @@ export default function Documents() {
       }, 100);
     } catch (err) {
       console.error(err);
-      alert("Kamera konnte nicht gestartet werden.");
+      notifyError("Kamera konnte nicht gestartet werden.");
     }
   };
 
@@ -90,7 +94,9 @@ export default function Documents() {
     setOcrLoading(true);
 
     try {
-      const result = await Tesseract.recognize(image, "deu+eng");
+      const worker = await createWorker("deu+eng");
+      const result = await worker.recognize(image);
+      await worker.terminate();
       setOcrText(result.data.text || "");
     } catch (e) {
       console.error(e);
@@ -114,7 +120,7 @@ export default function Documents() {
   // =========================
   const uploadPhoto = async () => {
     if (!photo || !selectedHouseId) {
-      alert("Haus + Foto nötig!");
+      notifyWarning("Haus und Foto sind erforderlich.");
       return;
     }
 
@@ -122,6 +128,11 @@ export default function Documents() {
 
     try {
       const user = (await supabase.auth.getUser()).data.user;
+      if (!user?.id) {
+        notifyWarning("Bitte einloggen, um Dokumente zu speichern.");
+        setUploading(false);
+        return;
+      }
 
       const fileName = `${Date.now()}.jpg`;
       const filePath = `${selectedHouseId}/${fileName}`;
@@ -154,7 +165,7 @@ export default function Documents() {
 
       if (dbError) throw dbError;
 
-      alert("✅ Dokument gespeichert und im Manager sichtbar!");
+      notifySuccess("Dokument gespeichert und im Manager sichtbar");
 
       // Reset alles
       setPhoto(null);
@@ -164,7 +175,7 @@ export default function Documents() {
       setOcrText("");
     } catch (e) {
       console.error(e);
-      alert("Upload Fehler");
+      notifyError("Upload fehlgeschlagen");
     }
 
     setUploading(false);
@@ -205,14 +216,14 @@ export default function Documents() {
       .eq("id", editDoc.id);
 
     if (error) {
-      alert("Fehler beim Speichern");
+      notifyError("Fehler beim Speichern");
       return;
     }
 
     setEditOpen(false);
     setEditDoc(null);
 
-    alert("Gespeichert!");
+    notifySuccess("Änderungen gespeichert");
   };
 
   return (
@@ -382,98 +393,109 @@ export default function Documents() {
 }
 
 /* =========================
-   STYLES (unverändert)
+   STYLES – Gradient Design iOS/Android
 ========================= */
 
 const page = {
   minHeight: "100vh",
-  padding: "24px 16px",
-  background: "#f6f7fb",
-  fontFamily: "Inter, Arial, sans-serif",
-  color: "#0f172a",
+  padding: "20px 16px 100px",
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
+  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif",
+  color: "#0f172a"
 };
 
 const container = {
-  maxWidth: 1100,
-  margin: "0 auto",
+  maxWidth: 1200,
+  margin: "0 auto"
 };
 
 const header = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  marginBottom: 40,
-  gap: 16,
+  marginBottom: 32,
+  gap: 16
 };
 
 const headerIcon = {
   width: 60,
   height: 60,
   borderRadius: 16,
-  background: "white",
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
-  flexShrink: 0,
+  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+  flexShrink: 0
 };
 
 const title = {
-  fontSize: 34,
+  fontSize: 32,
   fontWeight: 800,
   textAlign: "center",
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
+  WebkitBackgroundClip: "text",
+  WebkitTextFillColor: "transparent",
+  backgroundClip: "text"
 };
 
 const subtitle = {
   fontSize: 16,
   color: "#64748b",
   textAlign: "center",
+  fontWeight: 500
 };
 
 const card = {
-  background: "white",
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
   padding: 24,
-  borderRadius: 16,
-  border: "1px solid #e2e8f0",
-  boxShadow: "0 6px 18px rgba(0,0,0,0.04)",
+  borderRadius: 20,
+  border: "1px solid rgba(255, 255, 255, 0.2)",
+  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
   marginBottom: 20,
   width: "100%",
   maxWidth: "520px",
   marginLeft: "auto",
-  marginRight: "auto",
+  marginRight: "auto"
 };
 
 const cardHeader = {
   display: "flex",
   alignItems: "center",
   gap: 10,
-  marginBottom: 10,
+  marginBottom: 10
 };
 
 const smallIcon = {
   width: 36,
   height: 36,
   borderRadius: 10,
-  background: "#f1f5f9",
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+  color: "white"
 };
 
 const hint = {
   fontSize: 14,
   color: "#64748b",
   marginBottom: 16,
+  fontWeight: 500
 };
 
 const btn = {
-  padding: 16,
-  background: "#0f172a",
+  padding: 18,
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
   color: "white",
   border: "none",
-  borderRadius: 14,
+  borderRadius: 16,
   width: "100%",
-  fontWeight: 700,
+  fontWeight: 800,
   fontSize: 16,
   cursor: "pointer",
   display: "flex",
@@ -481,57 +503,68 @@ const btn = {
   alignItems: "center",
   gap: 8,
   marginTop: 12,
+  boxShadow: "0 8px 24px rgba(59, 130, 246, 0.4)",
+  transition: "all 0.3s ease"
 };
 
 const video = {
   width: "100%",
-  borderRadius: 12,
+  borderRadius: 14,
   marginTop: 10,
-  background: "#000",
+  background: "#000"
 };
 
 const img = {
   width: "100%",
-  borderRadius: 12,
-  marginTop: 10,
+  borderRadius: 14,
+  marginTop: 10
 };
 
 const ocrBox = {
   whiteSpace: "pre-wrap",
   fontSize: 12,
-  background: "#f8fafc",
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
   padding: 12,
-  borderRadius: 10,
+  borderRadius: 14,
   marginTop: 10,
   maxHeight: 200,
   overflowY: "auto",
+  border: "1px solid rgba(255, 255, 255, 0.2)"
 };
 
 const input = {
   width: "100%",
-  padding: 14,
-  borderRadius: 12,
-  border: "1px solid #e2e8f0",
+  padding: 16,
+  borderRadius: 14,
+  border: "2px solid #e2e8f0",
   marginBottom: 12,
-  fontSize: 14,
+  fontSize: 16,
+  fontWeight: 500,
+  color: "#1e293b",
   background: "white",
+  transition: "all 0.2s ease"
 };
 
 const overlay = {
   position: "fixed",
   inset: 0,
-  background: "rgba(0,0,0,0.4)",
+  background: "rgba(0, 0, 0, 0.4)",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
-  zIndex: 1000,
+  zIndex: 1000
 };
 
 const modal = {
-  background: "white",
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
   padding: 24,
-  borderRadius: 16,
+  borderRadius: 20,
   width: "90%",
   maxWidth: 400,
-  boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+  border: "1px solid rgba(255, 255, 255, 0.2)"
 };

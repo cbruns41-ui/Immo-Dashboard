@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabase/supabaseClient";
 import { useImmo } from "../context/ImmoContext";
+import { useNotifications } from "../context/NotificationContext";
 import UploadDocumentModal from "../components/UploadDocumentModal";
 import {
   UploadCloud,
@@ -14,6 +15,7 @@ import {
 
 export default function DocumentsManager() {
   const { houses } = useImmo();
+  const { error: notifyError, success: notifySuccess } = useNotifications();
 
   const [documents, setDocuments] = useState([]);
   const [selectedHouse, setSelectedHouse] = useState("");
@@ -32,9 +34,19 @@ export default function DocumentsManager() {
   const loadDocuments = async () => {
     setLoading(true);
 
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData?.user?.id;
+
+    if (!userId) {
+      setDocuments([]);
+      setLoading(false);
+      return;
+    }
+
     const { data, error } = await supabase
       .from("documents")
       .select("*")
+      .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -58,16 +70,26 @@ export default function DocumentsManager() {
     const ok = confirm("Dokument wirklich löschen?");
     if (!ok) return;
 
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData?.user?.id;
+    if (!userId) return;
+
+    if (doc.storage_path) {
+      await supabase.storage.from("documents").remove([doc.storage_path]);
+    }
+
     const { error } = await supabase
       .from("documents")
       .delete()
-      .eq("id", doc.id);
+      .eq("id", doc.id)
+      .eq("user_id", userId);
 
     if (error) {
-      alert("Fehler beim Löschen");
+      notifyError("Fehler beim Löschen");
       return;
     }
 
+    notifySuccess("Dokument gelöscht");
     setDocuments((prev) => prev.filter((d) => d.id !== doc.id));
   };
 
@@ -75,10 +97,15 @@ export default function DocumentsManager() {
   // FAVORITE
   // =========================
   const toggleFavorite = async (doc) => {
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData?.user?.id;
+    if (!userId) return;
+
     const { error } = await supabase
       .from("documents")
       .update({ is_favorite: !doc.is_favorite })
-      .eq("id", doc.id);
+      .eq("id", doc.id)
+      .eq("user_id", userId);
 
     if (error) return;
 
@@ -214,7 +241,16 @@ export default function DocumentsManager() {
         ========================= */}
         {!isMobile && (
           <div style={sidebar}>
-            <h3 style={{ marginTop: 0 }}>Dokumente</h3>
+            <h3 style={{ 
+              marginTop: 0, 
+              fontSize: 18, 
+              fontWeight: 800, 
+              background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+              marginBottom: 16 
+            }}>Dokumente</h3>
 
             <SidebarButton active={sidebarView === "all"} onClick={() => setSidebarView("all")}>
               Alle
@@ -353,7 +389,7 @@ export default function DocumentsManager() {
             style={mobileSidebar}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3>Filter</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", marginBottom: 16 }}>Filter</h3>
 
             <SidebarButton
               active={sidebarView === "all"}
@@ -395,17 +431,19 @@ function SidebarButton({ children, active, onClick }) {
       style={{
         width: "100%",
         textAlign: "left",
-        padding: 8,
-        borderRadius: 10,
+        padding: 10,
+        borderRadius: 12,
         border: "none",
         marginBottom: 6,
-        background: active ? "#0A2540" : "transparent",
-        color: active ? "white" : "#040c14",
+        background: active ? "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)" : "transparent",
+        color: active ? "white" : "#0f172a",
         display: "flex",
         gap: 8,
         alignItems: "center",
         cursor: "pointer",
-        fontSize: 13
+        fontSize: 13,
+        fontWeight: active ? 700 : 500,
+        transition: "all 0.2s ease"
       }}
     >
       {children}
@@ -414,112 +452,136 @@ function SidebarButton({ children, active, onClick }) {
 }
 
 // =========================
-// STYLES (kompakter)
+// STYLES – Gradient Design iOS/Android
 // =========================
 
 const sidebar = {
-  background: "white",
-  borderRadius: 16,
-  padding: 14,
-  border: "1px solid #edf0f2"
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  borderRadius: 20,
+  padding: 16,
+  border: "1px solid rgba(255, 255, 255, 0.2)",
+  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)"
 };
 
 const divider = {
   height: 1,
-  background: "#eee",
-  margin: "10px 0"
+  background: "rgba(226, 232, 240, 0.5)",
+  margin: "12px 0"
 };
 
 const searchInput = {
   width: "100%",
-  padding: 10,
-  borderRadius: 10,
-  border: "1px solid #ddd",
-  marginBottom: 12
+  padding: 12,
+  borderRadius: 12,
+  border: "2px solid #e2e8f0",
+  marginBottom: 12,
+  fontSize: 14,
+  fontWeight: 500,
+  color: "#1e293b",
+  background: "white",
+  transition: "all 0.2s ease"
 };
 
 /* 🔥 MEHR ITEMS PRO ZEILE */
 const grid = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
-  gap: 10
+  gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+  gap: 12
 };
 
 const card = {
-  background: "white",
-  borderRadius: 14,
-  padding: 10,
-  border: "1px solid #e2e8f0",
-  boxShadow: "0 3px 10px rgba(0,0,0,0.04)"
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  borderRadius: 18,
+  padding: 12,
+  border: "1px solid rgba(255, 255, 255, 0.2)",
+  boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
+  transition: "all 0.3s ease"
 };
 
 const img = {
   width: "100%",
-  height: 95,
+  height: 100,
   objectFit: "cover",
-  borderRadius: 10
+  borderRadius: 12
 };
 
 const placeholder = {
-  height: 95,
+  height: 100,
   display: "flex",
   alignItems: "center",
-  justifyContent: "center"
+  justifyContent: "center",
+  background: "linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)",
+  borderRadius: 12
 };
 
 const btnRow = {
   display: "flex",
-  gap: 6,
-  marginTop: 8
+  gap: 8,
+  marginTop: 10
 };
 
 const btn = {
   flex: 1,
-  padding: 6,
-  fontSize: 11,
+  padding: 8,
+  fontSize: 12,
   textAlign: "center",
-  borderRadius: 8,
-  background: "#0A2540",
+  borderRadius: 10,
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
   color: "white",
-  textDecoration: "none"
+  textDecoration: "none",
+  fontWeight: 700,
+  boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
+  transition: "all 0.2s ease"
 };
 
 const btnDanger = {
   flex: 1,
-  padding: 6,
-  fontSize: 11,
-  borderRadius: 8,
-  background: "#ef4444",
+  padding: 8,
+  fontSize: 12,
+  borderRadius: 10,
+  background: "linear-gradient(135deg, #ef4444 0%, #f87171 100%)",
   color: "white",
-  border: "none"
+  border: "none",
+  fontWeight: 700,
+  boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)",
+  transition: "all 0.2s ease"
 };
 
 const fab = {
   position: "fixed",
-  bottom: 18,
-  right: 18,
-  width: 54,
-  height: 54,
+  bottom: 20,
+  right: 20,
+  width: 56,
+  height: 56,
   borderRadius: "50%",
-  background: "#040f1a",
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
   color: "white",
   border: "none",
-  zIndex: 9999
+  zIndex: 9999,
+  boxShadow: "0 8px 24px rgba(59, 130, 246, 0.4)",
+  transition: "all 0.3s ease"
 };
 
 const overlay = {
   position: "fixed",
   inset: 0,
-  background: "rgba(0,0,0,0.4)",
+  background: "rgba(0, 0, 0, 0.4)",
   display: "flex",
   zIndex: 10000
 };
 
 const mobileSidebar = {
-  width: 260,
-  background: "white",
+  width: 280,
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
   height: "100%",
-  padding: 14
+  padding: 16,
+  border: "1px solid rgba(255, 255, 255, 0.2)"
 };
 
 const mobileTopBar = {
@@ -527,20 +589,23 @@ const mobileTopBar = {
   top: 70,
   left: 0,
   right: 0,
-  height: 54,
+  height: 56,
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  padding: "0 12px",
-  background: "white",
-  borderBottom: "1px solid #eee",
+  padding: "0 16px",
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  borderBottom: "1px solid rgba(226, 232, 240, 0.5)",
   zIndex: 9000
 };
 
 const mobileTitle = {
   margin: 0,
   fontSize: 16,
-  fontWeight: 700
+  fontWeight: 800,
+  color: "#0f172a"
 };
 
 const menuBtn = {
@@ -549,10 +614,12 @@ const menuBtn = {
 };
 
 const uploadFabSmall = {
-  background: "#040e18",
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
   color: "white",
   border: "none",
-  borderRadius: 8,
-  width: 34,
-  height: 34
+  borderRadius: 10,
+  width: 36,
+  height: 36,
+  boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
+  transition: "all 0.2s ease"
 };

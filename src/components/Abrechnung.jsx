@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useImmo } from "../context/ImmoContext";
+import { useNotifications } from "../context/NotificationContext";
 import { supabase } from "../supabase/supabaseClient";
 import jsPDF from "jspdf";
 import mammoth from "mammoth";
@@ -23,6 +24,8 @@ import {
 
 export default function Abrechnung() {
   const { houses } = useImmo();
+  const { error: notifyError, success: notifySuccess, warning: notifyWarning, info: notifyInfo } =
+    useNotifications();
 
   const [templates, setTemplates] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -45,7 +48,7 @@ export default function Abrechnung() {
   const [sharePercentage, setSharePercentage] = useState(100);
 
   const [showAnleitung, setShowAnleitung] = useState(false);
-  const [showInputs, setShowInputs] = useState(true);
+  const [showInputs, setShowInputs] = useState(false);
 
   const selectedHouse = houses.find(
     (h) => h.id === selectedHouseId
@@ -61,9 +64,18 @@ export default function Abrechnung() {
   // =========================
 
   const loadTemplates = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData?.user?.id;
+
+    if (!userId) {
+      setTemplates([]);
+      return;
+    }
+
     const { data, error } = await supabase
       .from("document_templates")
       .select("*")
+      .eq("user_id", userId)
       .order("created_at", {
         ascending: false,
       });
@@ -104,7 +116,7 @@ export default function Abrechnung() {
 
       if (uploadError) {
         console.error(uploadError);
-        alert(uploadError.message);
+        notifyError(uploadError.message);
         setUploading(false);
         return;
       }
@@ -132,17 +144,17 @@ export default function Abrechnung() {
 
       if (insertError) {
         console.error(insertError);
-        alert(insertError.message);
+        notifyError(insertError.message);
         setUploading(false);
         return;
       }
 
       await loadTemplates();
 
-      alert("Vorlage hochgeladen");
+      notifySuccess("Vorlage hochgeladen");
     } catch (err) {
       console.error(err);
-      alert("Fehler beim Upload");
+      notifyError("Fehler beim Upload");
     }
 
     setUploading(false);
@@ -162,10 +174,15 @@ export default function Abrechnung() {
     if (!ok) return;
 
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData?.user?.id;
+      if (!userId) return;
+
       await supabase
         .from("document_templates")
         .delete()
-        .eq("id", template.id);
+        .eq("id", template.id)
+        .eq("user_id", userId);
 
       if (template.file_path) {
         await supabase.storage
@@ -178,7 +195,7 @@ export default function Abrechnung() {
       await loadTemplates();
     } catch (err) {
       console.error(err);
-      alert("Fehler beim Löschen");
+      notifyError("Fehler beim Löschen");
     }
   };
 
@@ -207,26 +224,43 @@ export default function Abrechnung() {
         selectedApartment?.tenant ||
         "",
 
+      mieter:
+        manualData.mieter1 ||
+        selectedApartment?.tenant ||
+        "",
+
       mieter2:
         manualData.mieter2 || "",
 
       wohnung_name:
         selectedApartment?.name || "",
 
+      wohnung:
+        selectedApartment?.name || "",
+
       haus_name:
         selectedHouse?.name || "",
 
+      haus:
+        selectedHouse?.name || "",
+
       strasse:
-        manualData.strasse || "",
+        manualData.strasse ||
+        selectedHouse?.street ||
+        "",
 
       hausnummer:
-        manualData.hausnummer || "",
+        manualData.hausnummer ||
+        selectedHouse?.houseNumber ||
+        "",
 
       plz:
         manualData.plz || "",
 
       ort:
-        manualData.ort || "",
+        manualData.ort ||
+        selectedHouse?.city ||
+        "",
 
       warmmiete: String(
         selectedApartment?.warmmiete ||
@@ -243,25 +277,50 @@ export default function Abrechnung() {
 
       zeitraum_ende:
         periodEnd || "",
+
+      startdatum:
+        periodStart || "",
+
+      enddatum:
+        periodEnd || "",
     };
 
     let result = text;
+    let replacedCount = 0;
 
     Object.entries(data).forEach(
       ([key, value]) => {
-        const regex =
-          new RegExp(
-            `\\[\\[\\s*${key}\\s*\\]\\]`,
+        // Support multiple placeholder formats
+        const patterns = [
+          `[[${key}]]`,
+          `[[ ${key} ]]`,
+          `{{${key}}}`,
+          `{{ ${key} }}`,
+          `{${key}}`,
+          `{ ${key} }`,
+          `%${key}%`,
+          `%${key}%`,
+          `#${key}#`,
+          `#${key} #`
+        ];
+
+        patterns.forEach(pattern => {
+          const regex = new RegExp(
+            pattern.replace(/[[\]{}%#]/g, '\\$&'),
             "gi"
           );
 
-        result = result.replace(
-          regex,
-          value || ""
-        );
+          const matches = result.match(regex);
+          if (matches && matches.length > 0) {
+            result = result.replace(regex, value || "");
+            replacedCount += matches.length;
+          }
+        });
       }
     );
 
+    console.log(`Replaced ${replacedCount} placeholders in document`);
+    
     return result;
   };
 
@@ -272,9 +331,7 @@ export default function Abrechnung() {
   const generateFromTemplate =
     async (template) => {
       if (!selectedApartment) {
-        alert(
-          "Bitte Wohnung auswählen"
-        );
+        notifyWarning("Bitte Wohnung auswählen");
         return;
       }
 
@@ -313,9 +370,7 @@ export default function Abrechnung() {
         );
       } catch (err) {
         console.error(err);
-        alert(
-          "Fehler beim PDF erstellen"
-        );
+        notifyError("Fehler beim PDF erstellen");
       }
     };
 
@@ -326,9 +381,7 @@ export default function Abrechnung() {
   const generateNebenkostenPDF =
     () => {
       if (!selectedApartment) {
-        alert(
-          "Bitte Wohnung auswählen"
-        );
+        notifyWarning("Bitte Wohnung auswählen");
         return;
       }
 
@@ -814,9 +867,7 @@ export default function Abrechnung() {
               "Mietvertrag"
             )}
             onStandardClick={() =>
-              alert(
-                "Standard Mietvertrag folgt"
-              )
+              notifyInfo("Standard-Mietvertrag folgt in Kürze")
             }
             onTemplateClick={
               generateFromTemplate
@@ -837,9 +888,7 @@ export default function Abrechnung() {
               "Mahnung"
             )}
             onStandardClick={() =>
-              alert(
-                "Standard Mahnung folgt"
-              )
+              notifyInfo("Standard-Mahnung folgt in Kürze")
             }
             onTemplateClick={
               generateFromTemplate
@@ -860,9 +909,7 @@ export default function Abrechnung() {
               "Übergabeprotokoll"
             )}
             onStandardClick={() =>
-              alert(
-                "Standard Übergabeprotokoll folgt"
-              )
+              notifyInfo("Standard-Übergabeprotokoll folgt in Kürze")
             }
             onTemplateClick={
               generateFromTemplate
@@ -987,115 +1034,134 @@ function ActionCard({
 }
 
 /* =========================
-   STYLES
+   STYLES – Gradient Design iOS/Android
 ========================= */
 
 const page = {
   minHeight: "100vh",
-  background: "#f6f7fb",
-  padding: "24px 16px",
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
+  padding: "24px 16px 100px",
+  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif",
+  color: "#0f172a"
 };
 
 const container = {
-  maxWidth: 1100,
-  margin: "0 auto",
+  maxWidth: 1200,
+  margin: "0 auto"
 };
 
 const header = {
   textAlign: "center",
-  marginBottom: 24,
+  marginBottom: 32
 };
 
 const title = {
-  fontSize: 34,
+  fontSize: 32,
   fontWeight: 800,
   color: "#0f172a",
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
+  WebkitBackgroundClip: "text",
+  WebkitTextFillColor: "transparent",
+  backgroundClip: "text"
 };
 
 const subtitle = {
-  fontSize: 15,
+  fontSize: 16,
   color: "#64748b",
+  fontWeight: 500
 };
 
 const collapsibleHeader = {
   display: "flex",
-  justifyContent:
-    "space-between",
+  justifyContent: "space-between",
   alignItems: "center",
-  background: "white",
-  borderRadius: 16,
-  border:
-    "1px solid #e2e8f0",
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  borderRadius: 18,
+  border: "1px solid rgba(255, 255, 255, 0.2)",
   padding: "16px 18px",
   marginBottom: 12,
   cursor: "pointer",
-  fontWeight: 700,
+  fontWeight: 800,
+  boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
+  transition: "all 0.3s ease"
 };
 
 const collapseLeft = {
   display: "flex",
   alignItems: "center",
-  gap: 10,
+  gap: 10
 };
 
 const infoBox = {
-  background: "white",
-  borderRadius: 18,
-  border:
-    "1px solid #e2e8f0",
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  borderRadius: 20,
+  border: "1px solid rgba(255, 255, 255, 0.2)",
   padding: 20,
   marginBottom: 20,
+  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)"
 };
 
 const infoTitle = {
   marginTop: 0,
+  fontSize: 18,
+  fontWeight: 800,
+  color: "#0f172a"
 };
 
 const infoText = {
   color: "#475569",
   marginBottom: 14,
+  fontWeight: 500
 };
 
 const placeholderGrid = {
   display: "grid",
-  gridTemplateColumns:
-    "repeat(auto-fit,minmax(180px,1fr))",
-  gap: 10,
-  marginBottom: 18,
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gap: 12,
+  marginBottom: 18
 };
 
 const warningBox = {
-  background: "#f8fafc",
-  borderRadius: 12,
-  padding: 14,
+  background: "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)",
+  borderRadius: 14,
+  padding: 16,
   fontSize: 14,
-  color: "#475569",
+  color: "#92400e",
+  fontWeight: 600,
+  border: "2px solid #fbbf24"
 };
 
 const card = {
-  background: "white",
-  borderRadius: 18,
-  border:
-    "1px solid #e2e8f0",
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  borderRadius: 20,
+  border: "1px solid rgba(255, 255, 255, 0.2)",
   padding: 20,
   marginBottom: 20,
+  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)"
 };
 
 const inputGroup = {
   display: "flex",
   flexDirection: "column",
-  gap: 14,
+  gap: 14
 };
 
 const field = {
   display: "flex",
   alignItems: "center",
   gap: 12,
-  background: "#f8fafc",
-  border:
-    "1px solid #e2e8f0",
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  border: "2px solid #e2e8f0",
   borderRadius: 14,
-  padding: "0 14px",
+  padding: "0 14px"
 };
 
 const input = {
@@ -1104,131 +1170,148 @@ const input = {
   border: "none",
   outline: "none",
   background: "transparent",
-  fontSize: 15,
+  fontSize: 16,
+  fontWeight: 500,
+  color: "#0f172a"
 };
 
 const doubleGrid = {
   display: "grid",
-  gridTemplateColumns:
-    "1fr 1fr",
-  gap: 12,
+  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+  gap: 14
 };
 
 const sectionTitle = {
   display: "flex",
   alignItems: "center",
   gap: 10,
-  fontWeight: 700,
-  marginBottom: 14,
+  fontWeight: 800,
+  marginBottom: 16,
+  color: "#0f172a",
+  fontSize: 18
 };
 
 const actionsGrid = {
   display: "flex",
   flexDirection: "column",
-  gap: 14,
+  gap: 16
 };
 
 const actionCard = {
-  background: "white",
-  borderRadius: 18,
-  border:
-    "1px solid #e2e8f0",
-  padding: 18,
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  borderRadius: 20,
+  border: "1px solid rgba(255, 255, 255, 0.2)",
+  padding: 20,
   display: "flex",
-  justifyContent:
-    "space-between",
+  justifyContent: "space-between",
   gap: 20,
   alignItems: "center",
   flexWrap: "wrap",
+  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)"
 };
 
 const actionLeft = {
   display: "flex",
   alignItems: "center",
-  gap: 14,
+  gap: 16
 };
 
 const actionIcon = {
-  width: 50,
-  height: 50,
+  width: 52,
+  height: 52,
   borderRadius: 14,
-  background: "#f1f5f9",
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+  color: "white",
+  boxShadow: "0 4px 16px rgba(59, 130, 246, 0.3)"
 };
 
 const actionTitle = {
-  fontWeight: 700,
+  fontWeight: 800,
   fontSize: 16,
+  color: "#1e293b"
 };
 
 const actionDesc = {
   fontSize: 13,
   color: "#64748b",
+  fontWeight: 500
 };
 
 const actionButtons = {
   display: "flex",
   flexDirection: "column",
-  gap: 8,
-  minWidth: 220,
+  gap: 10,
+  minWidth: 220
 };
 
 const templateRow = {
   display: "flex",
-  gap: 8,
-  alignItems: "center",
+  gap: 10,
+  alignItems: "center"
 };
 
 const downloadBtn = {
-  background: "#0f172a",
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
   color: "white",
   border: "none",
-  borderRadius: 12,
-  padding: "10px 14px",
+  borderRadius: 14,
+  padding: "12px 16px",
   cursor: "pointer",
   display: "flex",
   alignItems: "center",
   gap: 8,
-  fontWeight: 600,
+  fontWeight: 800,
+  boxShadow: "0 4px 16px rgba(59, 130, 246, 0.3)",
+  transition: "all 0.2s ease"
 };
 
 const uploadBtn = {
-  background: "#f8fafc",
-  border:
-    "1px dashed #94a3b8",
-  borderRadius: 12,
-  padding: "10px 14px",
+  background: "rgba(255, 255, 255, 0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  border: "2px dashed #94a3b8",
+  borderRadius: 14,
+  padding: "12px 16px",
   cursor: "pointer",
   display: "flex",
   alignItems: "center",
   gap: 8,
-  fontWeight: 600,
+  fontWeight: 700,
+  color: "#1e293b",
+  transition: "all 0.2s ease"
 };
 
 const templateBtn = {
   flex: 1,
-  background: "#f1f5f9",
+  background: "linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)",
   border: "none",
-  borderRadius: 10,
-  padding: "10px 12px",
+  borderRadius: 12,
+  padding: "12px 14px",
   cursor: "pointer",
   display: "flex",
   alignItems: "center",
   gap: 8,
-  fontWeight: 600,
+  fontWeight: 700,
+  color: "#1e293b",
+  transition: "all 0.2s ease"
 };
 
 const deleteBtn = {
-  width: 42,
-  height: 42,
-  borderRadius: 10,
+  width: 44,
+  height: 44,
+  borderRadius: 12,
   border: "none",
-  background: "#ef4444",
+  background: "linear-gradient(135deg, #ef4444 0%, #f87171 100%)",
   color: "white",
   cursor: "pointer",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+  boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)",
+  transition: "all 0.2s ease"
 };

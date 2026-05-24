@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { supabase } from "../supabase/supabaseClient";
 import { useImmo } from "../context/ImmoContext";
+import { useNotifications } from "../context/NotificationContext";
 import { UploadCloud, X, FolderUp } from "lucide-react";
 
 export default function UploadDocumentModal({
@@ -9,6 +10,8 @@ export default function UploadDocumentModal({
   onUploaded,
 }) {
   const { houses } = useImmo();
+  const { error: notifyError, success: notifySuccess, warning: notifyWarning } =
+    useNotifications();
 
   const fileInputRef = useRef();
 
@@ -26,11 +29,11 @@ export default function UploadDocumentModal({
 
   const uploadFiles = async () => {
     if (!files.length) {
-      alert("Bitte Dateien auswählen");
+      notifyWarning("Bitte Dateien auswählen");
       return;
     }
     if (!selectedHouse) {
-      alert("Bitte Haus auswählen");
+      notifyWarning("Bitte Haus auswählen");
       return;
     }
 
@@ -83,6 +86,7 @@ export default function UploadDocumentModal({
           });
       }
 
+      notifySuccess("Upload abgeschlossen");
       setFiles([]);
       onUploaded?.();
       onClose();
@@ -92,7 +96,7 @@ export default function UploadDocumentModal({
       setType("sonstiges");
     } catch (err) {
       console.error(err);
-      alert("Upload fehlgeschlagen");
+      notifyError("Upload fehlgeschlagen");
     }
 
     setUploading(false);
@@ -203,7 +207,7 @@ export default function UploadDocumentModal({
             <option value="vertrag">Vertrag</option>
             <option value="versicherung">Versicherung</option>
             <option value="reparatur">Reparatur</option>
-            <option value="nebeneinkostenabrechnung">Nebenkostenabrechnung</option>
+            <option value="nebenkostenabrechnung">Nebenkostenabrechnung</option>
             <option value="mahnung">Mahnung</option>
             <option value="steuerrelevant">Steuerrelevant</option>
             <option value="sonstiges">Sonstiges</option>
@@ -356,10 +360,12 @@ const cancelBtn = {
 const uploadBtn = {
   flex: 2,
   padding: 16,
-  borderRadius: 12,
+  borderRadius: 14,
   border: "none",
-  background: "#0A2540",
+  background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
   color: "white",
-  fontWeight: 700,
+  fontWeight: 800,
   cursor: "pointer",
+  boxShadow: "0 4px 16px rgba(59, 130, 246, 0.3)",
+  transition: "all 0.2s ease"
 };
